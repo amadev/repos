@@ -1,0 +1,102 @@
+repos:
+  - name: nova
+    path: $HOME/m/nova/
+    tags: []
+    group: openstack
+    remotes:
+      - name: origin
+        url: https://review.opendev.org/openstack/nova
+      - name: mcp
+        url: https://gerrit.mcp.mirantis.com/packaging/sources/nova
+    branches:
+      - name: master
+        remote: origin
+        remote_ref: master
+      - name: mcp/queens
+        remote: mcp
+        remote_ref: mcp/queens
+
+  - name: neutron
+    path: $HOME/m/neutron/
+    tags: []
+    group: openstack
+    remotes:
+      - name: origin
+        url: https://review.opendev.org/openstack/neutron
+    branches:
+      - name: master
+        remote: origin
+        remote_ref: master
+
+  - name: linux-kernel
+    path: $HOME/src/linux-kernel/
+    tags:
+      - shallow
+    group: linux
+    remotes:
+      - name: origin
+      - url: git@github.com:torvalds/linux.git
+    branches:
+      - name: master
+        remote: origin
+        remote_ref: master
+
+  - name: qemu
+    url: git@github.com:qemu/qemu.git
+    path: $HOME/src/qemu/
+    tags:
+      - shallow
+    group: virt
+    remotes:
+      - name: origin
+        url: git@github.com:qemu/qemu.git
+    branches:
+      - name: master
+        remote: origin
+        remote_ref: master
+
+  - name: libvirt
+    path: $HOME/src/libvirt/
+    tags:
+      - shallow
+    group: virt
+    remotes:
+      - name: origin
+        url: git@github.com:libvirt/libvirt.git
+    branches:
+      - name: master
+        remote: origin
+        remote_ref: master
+
+  - name: dotfiles
+    path: $HOME/dotfiles/
+    tags:
+      - auto-sync
+    group: personal
+    remotes:
+      - name: origin
+        url: $PERSONAL_GIT/~/repos/dotfiles
+      - name: github
+        url: github.com/$USER/dotfiles
+    branches:
+      - name: master
+        remote: origin
+        remote_ref: master
+      - name: github/master
+        remote: github
+        remote_ref: master
+
+groups:
+  - name: __default__
+
+  - name: virt
+    parent: __default__
+
+  - name: openstack
+    parent: virt
+
+  - name: linux
+    parent: __default__
+
+  - name: personal
+    parent: __default__

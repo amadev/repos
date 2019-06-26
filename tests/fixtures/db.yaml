@@ -71,7 +71,7 @@ repos:
   - name: dotfiles
     path: $HOME/dotfiles/
     tags:
-      - auto-sync
+      - auto-commit
     group: personal
     remotes:
       - name: origin

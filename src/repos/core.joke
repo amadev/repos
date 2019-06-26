@@ -1,0 +1,65 @@
+;; #-*- mode: clojure -*-
+
+# Local Variables:
+# target-shell-session: "shell-joker"
+# End:
+
+(ns repos.core
+  (:require [joker.os :as os]))
+
+(defn dir?
+  [path]
+  (try
+    (:dir? (os/stat path))
+    (catch Error e
+      false)))
+
+(defn ex
+  [& args]
+  (let [args (filter (complement empty?) args)]
+    (prn "call: " args)
+    (prn "result:" (os/exec (first args) {:args (rest args)}))))
+
+(defn pull
+  [repo]
+  (if (not (dir? (:path repo)))
+    ;; clone
+    (let [shallow (contains? (:tags repo) :shallow)]
+      (ex "git" "clone"
+          (if shallow "--depth 1" "")
+          (format "--origin=%s" (-> repo :remotes first :name))
+          (format "--branch=%s" (-> repo :branches first :name))
+          (-> repo :remotes first :url)
+          (:path repo))
+      (doseq [r (rest (:remotes repo))]
+        (do
+          (ex "git" "add" "remote" (:name r) (:url r))
+          (ex "git" "fetch" (:name r))))
+      (doseq [b (rest (:branches repo))]
+        (ex "git" "checkout" "-b" (:name b) "--track" (format "%s/%s" (:remote b) (:remote_ref b))))
+      ;; todo add group processing
+      ;; (os/exec "mkdir -p group_path; ln -s repo_path group_path/repo_name")
+      )
+    ;; pull
+    (let [d (os/cwd)]
+      (os/chdir (:path repo))
+      (doseq [r (:remotes repo)]
+        (ex "git" "pull" (:name r)))
+      (os/chdir d))
+    ))
+
+;; tests
+
+(def test-repo {:name "r1"
+                :path "/tmp/repos-test/r1"
+                :remotes [
+                          {:name "origin"
+                           :url "/tmp/repos-test-orig/r1"}]
+                :branches [
+                           {:name "master"
+                            :remote "origin"
+                            :remote_ref "master"}]})
+
+(os/exec "rm" {:args ["-rf" (:path test-repo)]})
+
+(pull test-repo)

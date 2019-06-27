@@ -53,7 +53,7 @@
 (defn struct-walk
   [data key-func val-func & [path]]
   (cond
-    (or (list? data) (vector? data)) (map #(struct-walk %1 key-func val-func (apply str [path ".[]"])) data)
+    (or (list? data) (vector? data)) (mapv #(struct-walk %1 key-func val-func (apply str [path ".[]"])) data)
     (map? data) (into {} (for [[k v] data] [(key-func k) (struct-walk v key-func val-func (apply str [path "." k]))]))
     :else (val-func data path)))
 

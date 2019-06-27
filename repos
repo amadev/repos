@@ -1,0 +1,14 @@
+#!/usr/bin/env joker
+;; #-*- mode: clojure -*-
+
+(ns script
+    (:require [joker.tools.cli :as cli]
+              [joker.os :as os]
+              [src.repos.core :as r]))
+
+(defn main
+  []
+  (let [db (r/read-yaml (r/expand-env (os/env) "$HOME/.repos/db.yaml"))]
+    (r/pull-all (:repos db))))
+
+(main)

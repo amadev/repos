@@ -1,10 +1,10 @@
 ;; #-*- mode: clojure -*-
 
-# Local Variables:
-# target-shell-session: "shell-joker"
-# End:
+;; Local Variables:
+;; target-shell-session: "shell-joker"
+;; End:
 
-(ns repos.core
+(ns src.repos.core
   (:require [joker.os :as os])
   (:require [joker.yaml :as yaml])
   (:require [joker.string :as str]))
@@ -57,7 +57,7 @@
     (map? data) (into {} (for [[k v] data] [(key-func k) (struct-walk v key-func val-func (apply str [path "." k]))]))
     :else (val-func data path)))
 
-(defn str-replace-env-vars
+(defn expand-env
   [env data]
   ;; the func would be much easier if str/replace could suport repl arg as func
   (loop [replaces (map #(list %1 (get env (apply str (rest %1)) "")) (re-seq #"\$[A-Z0-9_]+" data))
@@ -73,31 +73,14 @@
   [v p]
   (if (str/ends-with? p "tags.[]")
     (keyword v)
-    (str-replace-env-vars (os/env) v)))
+    (expand-env (os/env) v)))
 
 (defn read-yaml
   [path]
   (let [data (yaml/read-string (slurp path))]
     (struct-walk data keyword process-yaml-values)))
 
-;; tests
-
-(struct-walk {"a" "b" "c" "d" "e" {"f" "g"}} keyword (fn [v p] (str/upper-case v)))
-
-(str-replace-env-vars (os/env) "my $HOME $USER")
-
-(read-yaml "/home/amadev/p/repo-sync/tests/fixtures/db.yaml")
-
-(def test-repo {:name "r1"
-                :path "/tmp/repos-test/r1"
-                :remotes [
-                          {:name "origin"
-                           :url "/tmp/repos-test-orig/r1"}]
-                :branches [
-                           {:name "master"
-                            :remote "origin"
-                            :remote_ref "master"}]})
-
-(os/exec "rm" {:args ["-rf" (:path test-repo)]})
-
-(pull test-repo)
+(defn pull-all
+  [repos]
+  (doseq [r repos]
+    (pull r)))

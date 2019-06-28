@@ -57,13 +57,13 @@ Config options
 
 Config by default resided in $HOME/.repos/conf.yaml.
 
-- db_path: path where `repos` DB yaml stored;
-- search_command - a template for command, `grep -rHin %s` by default,
+- db: path where `repos` db yaml stored;
+- groups: path to group hierarchy symlinks;
+- search_command - a template for command, `grep -rhin %s` by default,
   but `ag` recommended;
-- repos_directory - all repositories without `--path` specification
+- repos_default_directory - all repositories without `--path` specification
   will be cloned here;
-- log_size - maximum log size, 10MB by default;
-- log_backups - a number of log rotated files.
+- log - path to a log file.
 
 Repository tags
 ---------------

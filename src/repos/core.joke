@@ -12,6 +12,8 @@
 
 (def *context* {})
 
+(declare ex)
+
 (defn dir?
   [path]
   (try
@@ -23,6 +25,11 @@
   [i v]
   (ffirst (filter #(= (second %) i) (map-indexed vector v))))
 
+(defn write
+  [path string]
+  ;; todo: didn't find the proper way to do it on joker
+  (ex "bash" "-c" (format "echo '%s' >> %s" string path)))
+
 (defn log
   [message level]
   (let [levels [:debug :info :error]]
@@ -32,6 +39,7 @@
                        (time/format (time/now) time/rfc3339)
                        message)))))
 
+;; todo: generate log funcs dynamically
 (defn debug
   [message & args]
   (log (apply str (interpose " " (cons message args))) :debug))
@@ -80,7 +88,7 @@
                   (ex "git" "fetch" (:name r))))
               (doseq [b (rest (:branches repo))]
                 (ex "git" "checkout" "-b" (:name b) "--track" (format "%s/%s" (:remote b) (:refspec b)))))
-      ;; todo add group processing
+      ;; todo: add group processing
       ;; (os/exec "mkdir -p group_path; ln -s repo_path group_path/repo_name")
       )
     ;; pull

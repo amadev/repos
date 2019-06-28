@@ -1,10 +1,10 @@
-repo-sync
-=========
+repos
+=====
 
 Basic operations
 ----------------
 
-repo-sync is a CLI tool that helps to manage multiple git repositories.
+`repos` is a CLI tool that helps to manage multiple git repositories.
 
 Add some repositories with `repos add` command.
 
@@ -18,25 +18,24 @@ To overcome, use the `--name` option.
 The following basic operations are available.
 
   repos list
-  repos clone
   repos pull
 
-Repos could be organized hierarchically into groups and operations can
-be issued on a particular group only. The most useful way of using
-groups is a `search` operation that helps to search on multiples
-repositories not depending on a path they were cloned.
+Repositories could be organized hierarchically into groups and
+operations can be issued on a particular group only. The most useful
+way of using groups is a `search` operation that helps to search on
+multiples repositories not depending on a path they were cloned.
 
   repos search --group qemu needle -- --ignore tests
 
 The search backend could be changed with a 'search_command` config option.
 
-Auto-sync
----------
+repos sync
+----------
 
 A `repos sync` command pulls and pushes repositories to make sure
 everything is synchronized. As a pure man dropbox alternative, you can
-mark your repo with `auto-sync` tag like `repos add <repo> --tags
-auto-sync` and `repos sync` will auto-commit changes in the
+mark your repo with `auto-commit` tag like `repos add <repo> --tags
+auto-commit` and `repos sync` will auto-commit changes in the
 repository, pull changes from upstream and push resulting set to
 upstream. Surely this may be applied to a specific group only.
 
@@ -56,25 +55,26 @@ Group names must be unique. Be careful with circular dependencies.
 Config options
 --------------
 
-Config resided in $HOME/.repo-sync/repos-sync.yaml.
+Config by default resided in $HOME/.repos/conf.yaml.
 
+- db_path: path where `repos` DB yaml stored;
 - search_command - a template for command, `grep -rHin %s` by default,
-  but `ag` recommended.
+  but `ag` recommended;
 - repos_directory - all repositories without `--path` specification
-  will be cloned here.
-- log_size - maximum log size, 10MB by default.
+  will be cloned here;
+- log_size - maximum log size, 10MB by default;
 - log_backups - a number of log rotated files.
 
 Repository tags
 ---------------
 
 - auto-commit - for `repos sync` command it will stage all changes and
-  commit them.
-- shallow - quick clone for big repositories pushing not planned
-  from. Best to use in combination with the `--branch` option.
+  commit them;
+- shallow - quick clone for big repositories pushing is not planned
+  from.
 
 Gerrit repositories download
 ----------------------------
 
-`repos gerrit <url>` generates a script with `repo-sync` commands to download
+`repos gerrit <url>` generates a script with `repos` commands to download
 all gerrit projects hierarchy.

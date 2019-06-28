@@ -55,7 +55,7 @@
      (:path repo)
      (doseq [b (:branches repo)]
        (ex "git" "checkout" (:name b))
-       (ex "git" "pull" (:remote b) (:refspec b))))))
+       (ex "git" "pull" "--rebase" (:remote b) (:refspec b))))))
 
 (defn struct-walk
   [data key-func val-func & [path]]

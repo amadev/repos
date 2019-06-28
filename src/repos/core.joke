@@ -40,12 +40,13 @@
           (format "--branch=%s" (-> repo :branches first :name))
           (-> repo :remotes first :url)
           (:path repo))
-      (doseq [r (rest (:remotes repo))]
-        (do
-          (ex "git" "add" "remote" (:name r) (:url r))
-          (ex "git" "fetch" (:name r))))
-      (doseq [b (rest (:branches repo))]
-        (ex "git" "checkout" "-b" (:name b) "--track" (format "%s/%s" (:remote b) (:remote_ref b))))
+      (in-dir (:path repo)
+       (doseq [r (rest (:remotes repo))]
+         (do
+           (ex "git" "remote" "add" (:name r) (:url r))
+           (ex "git" "fetch" (:name r))))
+       (doseq [b (rest (:branches repo))]
+         (ex "git" "checkout" "-b" (:name b) "--track" (format "%s/%s" (:remote b) (:refspec b)))))
       ;; todo add group processing
       ;; (os/exec "mkdir -p group_path; ln -s repo_path group_path/repo_name")
       )

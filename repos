@@ -13,4 +13,9 @@
         db (r/read-yaml (r/expand-env (os/env) db-path))]
     (r/pull-all (:repos db))))
 
-(main)
+(try
+  (main)
+  (catch Error e
+    (printf "Error: %s\nCause: %s\nSee log for details\n"
+            (ex-message e)
+            (:cause (ex-data e)))))

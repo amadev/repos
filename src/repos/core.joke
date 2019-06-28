@@ -30,9 +30,14 @@
 
 (defn ex
   [& args]
-  (let [args (filter (complement empty?) args)]
-    (prn "call: " args)
-    (prn "result:" (os/exec (first args) {:args (rest args)}))))
+  (let [args (filter (complement empty?) args)
+        s-args (str/join " " args)]
+    (debug "call:" s-args)
+    (let [r (os/exec (first args) {:args (rest args)})]
+      (debug "result:" r)
+      (when-not (:success r)
+        (throw (ex-info "Exec failed"
+                        {:cause (:err r)}))))))
 
 (defmacro in-dir
   [dir & body]

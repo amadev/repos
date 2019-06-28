@@ -10,6 +10,8 @@
   (:require [joker.string :as str])
   (:require [joker.time :as time]))
 
+(def *context* {})
+
 (defn dir?
   [path]
   (try
@@ -17,16 +19,30 @@
     (catch Error e
       false)))
 
+(defn index
+  [i v]
+  (ffirst (filter #(= (second %) i) (map-indexed vector v))))
+
 (defn log
   [message level]
-  (println (format "[%s] %s %s"
-                   (apply str (-> level str str/upper-case rest))
-                   (time/format (time/now) time/rfc3339)
-                   message)))
+  (let [levels [:debug :info :error]]
+    (when (>= (index level levels) (index (:log_level *context*) levels))
+      (println (format "[%s] %s %s"
+                       (apply str (-> level str str/upper-case rest))
+                       (time/format (time/now) time/rfc3339)
+                       message)))))
 
 (defn debug
   [message & args]
   (log (apply str (interpose " " (cons message args))) :debug))
+
+(defn info
+  [message & args]
+  (log (apply str (interpose " " (cons message args))) :info))
+
+(defn error
+  [message & args]
+  (log (apply str (interpose " " (cons message args))) :error))
 
 (defn ex
   [& args]
@@ -58,12 +74,12 @@
           (-> repo :remotes first :url)
           (:path repo))
       (in-dir (:path repo)
-       (doseq [r (rest (:remotes repo))]
-         (do
-           (ex "git" "remote" "add" (:name r) (:url r))
-           (ex "git" "fetch" (:name r))))
-       (doseq [b (rest (:branches repo))]
-         (ex "git" "checkout" "-b" (:name b) "--track" (format "%s/%s" (:remote b) (:refspec b)))))
+              (doseq [r (rest (:remotes repo))]
+                (do
+                  (ex "git" "remote" "add" (:name r) (:url r))
+                  (ex "git" "fetch" (:name r))))
+              (doseq [b (rest (:branches repo))]
+                (ex "git" "checkout" "-b" (:name b) "--track" (format "%s/%s" (:remote b) (:refspec b)))))
       ;; todo add group processing
       ;; (os/exec "mkdir -p group_path; ln -s repo_path group_path/repo_name")
       )
@@ -107,4 +123,13 @@
 (defn pull-all
   [repos]
   (doseq [r repos]
+    (info "pull" (:name r))
     (pull r)))
+
+(defn main
+  []
+  (let [env (os/env)
+        db-path (get env "REPOS_DB" "$HOME/.repos/db.yaml")
+        db (read-yaml (expand-env (os/env) db-path))]
+    (binding [*context* {:log_level :debug}]
+      (pull-all (:repos db)))))

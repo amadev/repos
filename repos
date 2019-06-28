@@ -2,20 +2,13 @@
 ;; #-*- mode: clojure -*-
 
 (ns script
-    (:require [joker.tools.cli :as cli]
-              [joker.os :as os]
-              [src.repos.core :as r]))
-
-(defn main
-  []
-  (let [env (os/env)
-        db-path (get env "REPOS_DB" "$HOME/.repos/db.yaml")
-        db (r/read-yaml (r/expand-env (os/env) db-path))]
-    (r/pull-all (:repos db))))
+  (:require [joker.os :as os])
+  (:require [src.repos.core :as r]))
 
 (try
-  (main)
+  (r/main)
   (catch Error e
-    (printf "Error: %s\nCause: %s\nSee log for details\n"
-            (ex-message e)
-            (:cause (ex-data e)))))
+    (r/error "Error: %s\nCause: %s\nTry verbose for details\n"
+             (ex-message e)
+             (:cause (ex-data e)))
+    (os/exit 1)))

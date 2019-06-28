@@ -22,6 +22,13 @@
     (prn "call: " args)
     (prn "result:" (os/exec (first args) {:args (rest args)}))))
 
+(defmacro in-dir
+  [dir & body]
+  `(let [save-dir# (os/cwd)]
+     (os/chdir ~dir)
+     ~@body
+     (os/chdir save-dir#)))
+
 (defn pull
   [repo]
   (if (not (dir? (:path repo)))
@@ -43,12 +50,11 @@
       ;; (os/exec "mkdir -p group_path; ln -s repo_path group_path/repo_name")
       )
     ;; pull
-    (let [d (os/cwd)]
-      (os/chdir (:path repo))
-      (doseq [r (:remotes repo)]
-        (ex "git" "pull" (:name r)))
-      (os/chdir d))
-    ))
+    (in-dir
+     (:path repo)
+     (doseq [b (:branches repo)]
+       (ex "git" "checkout" (:name b))
+       (ex "git" "pull" (:remote b) (:refspec b))))))
 
 (defn struct-walk
   [data key-func val-func & [path]]

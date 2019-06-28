@@ -11,10 +11,10 @@ repos:
     branches:
       - name: master
         remote: origin
-        remote_ref: master
+        refspec: master
       - name: mcp/queens
         remote: mcp
-        remote_ref: mcp/queens
+        refspec: mcp/queens
 
   - name: neutron
     path: $HOME/m/neutron/
@@ -26,7 +26,7 @@ repos:
     branches:
       - name: master
         remote: origin
-        remote_ref: master
+        refspec: master
 
   - name: linux-kernel
     path: $HOME/src/linux-kernel/
@@ -39,7 +39,7 @@ repos:
     branches:
       - name: master
         remote: origin
-        remote_ref: master
+        refspec: master
 
   - name: qemu
     url: git@github.com:qemu/qemu.git
@@ -53,7 +53,7 @@ repos:
     branches:
       - name: master
         remote: origin
-        remote_ref: master
+        refspec: master
 
   - name: libvirt
     path: $HOME/src/libvirt/
@@ -66,7 +66,7 @@ repos:
     branches:
       - name: master
         remote: origin
-        remote_ref: master
+        refspec: master
 
   - name: dotfiles
     path: $HOME/dotfiles/
@@ -81,10 +81,10 @@ repos:
     branches:
       - name: master
         remote: origin
-        remote_ref: master
+        refspec: master
       - name: github/master
         remote: github
-        remote_ref: master
+        refspec: master
 
 groups:
   - name: __default__

@@ -8,7 +8,9 @@
 
 (defn main
   []
-  (let [db (r/read-yaml (r/expand-env (os/env) "$HOME/.repos/db.yaml"))]
+  (let [env (os/env)
+        db-path (get env "REPOS_DB" "$HOME/.repos/db.yaml")
+        db (r/read-yaml (r/expand-env (os/env) db-path))]
     (r/pull-all (:repos db))))
 
 (main)

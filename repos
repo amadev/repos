@@ -8,7 +8,9 @@
 (try
   (r/main)
   (catch Error e
-    (printf "Error: %s\nCause: %s\nTry verbose for details\n"
-            (ex-message e)
-            (:cause (ex-data e)))
+    (if (ex-message e)
+      (printf "Error: %s\nCause: %s\nTry verbose for details\n"
+              (ex-message e)
+              (:cause (ex-data e)))
+      (printf "Error: %s\n" e))
     (os/exit 1)))

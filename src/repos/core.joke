@@ -1,8 +1,4 @@
-;; #-*- mode: clojure -*-
-
-;; Local Variables:
-;; target-shell-session: "shell-joker"
-;; End:
+;; #-*- mode: clojure; target-shell-session: "shell-joker" -*-
 
 (ns src.repos.core
   (:require [joker.os :as os])

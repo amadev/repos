@@ -70,6 +70,24 @@
      ~@body
      (os/chdir save-dir#)))
 
+(defn reload-branches
+  [repo]
+  (in-dir (:path repo)
+          (doseq [r (rest (:remotes repo))]
+            (do
+              (try
+                (ex "git" "remote" "add" (:name r) (:url r))
+                (catch Error e
+                  (when-not (str/index-of (:cause (ex-data e)) "already exists")
+                    (throw (ex-info (ex-message e) (ex-data e))))))
+              (ex "git" "fetch" (:name r))))
+          (doseq [b (rest (:branches repo))]
+            (try
+              (ex "git" "checkout" "-b" (:name b) "--track" (format "%s/%s" (:remote b) (:refspec b)))
+              (catch Error e
+                (when-not (str/index-of (:cause (ex-data e)) "already exists")
+                  (throw (ex-info (ex-message e) (ex-data e)))))))))
+
 (defn pull
   [repo]
   (if (not (dir? (:path repo)))
@@ -81,19 +99,14 @@
           (format "--branch=%s" (-> repo :branches first :name))
           (-> repo :remotes first :url)
           (:path repo))
-      (in-dir (:path repo)
-              (doseq [r (rest (:remotes repo))]
-                (do
-                  (ex "git" "remote" "add" (:name r) (:url r))
-                  (ex "git" "fetch" (:name r))))
-              (doseq [b (rest (:branches repo))]
-                (ex "git" "checkout" "-b" (:name b) "--track" (format "%s/%s" (:remote b) (:refspec b)))))
+      (reload-branches repo)
       ;; todo: add group processing
       ;; (os/exec "mkdir -p group_path; ln -s repo_path group_path/repo_name")
       )
     ;; pull
     (in-dir
      (:path repo)
+     (reload-branches repo)
      (doseq [b (:branches repo)]
        (ex "git" "checkout" (:name b))
        (ex "git" "pull" "--rebase" (:remote b) (:refspec b))))))

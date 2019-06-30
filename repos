@@ -1,16 +1,60 @@
 #!/usr/bin/env joker
-;; #-*- mode: clojure -*-
+;; #-*- mode: clojure; target-shell-session: "shell-joker" -*-
 
 (ns script
+  (:require [joker.tools.cli :as cli])
   (:require [joker.os :as os])
   (:require [src.repos.core :as r]))
 
-(try
-  (r/main)
-  (catch Error e
-    (if (ex-message e)
-      (printf "Error: %s\nCause: %s\nTry verbose for details\n"
-              (ex-message e)
-              (:cause (ex-data e)))
-      (printf "Error: %s\n" e))
-    (os/exit 1)))
+(def *program* "repos")
+(def *version* [0 1 0])
+(def *actions*
+  [[
+    "pull" "Clone or update all specified repositories"]])
+(def *opts*
+  [["-v" "--verbose" :default 0 :update-fn inc]
+   ["-h" "--help" "Show this summary" :default false]])
+
+(defn usage
+  [summary errors]
+  (printf "usage: %s [options] action\n" *program*)
+  (printf "ACTIONS\n\n")
+  (doseq [action *actions*]
+    (printf "  %s\t\t%s\n" (first action) (second action)))
+  (println)
+  (printf "OPTIONS\n\n")
+  (println summary)
+  (when errors
+    (println "\nErrors:")
+    (run! println errors)))
+
+(let [{:keys [options arguments summary errors]} (cli/parse-opts *command-line-args* *opts*)
+      {:keys [verbose help]} options]
+  (cond
+    errors
+    (do
+      (usage summary errors)
+      (os/exit -1))
+
+    help
+    (usage summary nil)
+
+    (not (empty? arguments))
+    (if (and (= 1 (count arguments)))
+     (try
+       (r/main (first arguments) options)
+       (catch Error e
+         (if (ex-message e)
+           (printf "Error: %s\nCause: %s\nTry verbose for details\n"
+                   (ex-message e)
+                   (:cause (ex-data e)))
+           (printf "Error: %s\n" e))
+         (os/exit 1)))
+     (do
+       (usage summary ["Unknown action"])
+      (os/exit -1)))
+
+    :else
+    (do
+      (usage summary ["Must specify an action"])
+      (os/exit -1))))

@@ -7,6 +7,7 @@
   (:require [joker.time :as time]))
 
 (def *context* {})
+(def *levels* [:debug :info :error])
 
 (declare ex)
 
@@ -28,12 +29,11 @@
 
 (defn log
   [message level]
-  (let [levels [:debug :info :error]]
-    (when (>= (index level levels) (index (:log_level *context*) levels))
-      (println (format "[%s] %s %s"
-                       (apply str (-> level str str/upper-case rest))
-                       (time/format (time/now) time/rfc3339)
-                       message)))))
+  (when (>= (index level *levels*) (index (:log_level *context*) *levels*))
+    (println (format "[%s] %s %s"
+                     (apply str (-> level str str/upper-case rest))
+                     (time/format (time/now) time/rfc3339)
+                     message))))
 
 ;; todo: generate log funcs dynamically
 (defn debug
@@ -144,9 +144,10 @@
     (pull r)))
 
 (defn main
-  []
+  [action options]
   (let [env (os/env)
         db-path (get env "REPOS_DB" "$HOME/.repos/db.yaml")
         db (read-yaml (expand-env (os/env) db-path))]
-    (binding [*context* {:log_level :debug}]
-      (pull-all (:repos db)))))
+    (binding [*context* {:log_level (get (vec (reverse *levels*)) (:verbose options) :debug)}]
+      (case action
+        "pull" (pull-all (:repos db))))))

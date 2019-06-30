@@ -16,6 +16,6 @@ __FILE__="${__DIR__}/${__BASE__}"
 cat << EOF > /usr/local/bin/repos
 #!/usr/bin/env bash
 
-$__DIR__/repos
+$__DIR__/repos \$@
 EOF
 chmod 755 /usr/local/bin/repos

@@ -143,6 +143,30 @@
     (info "pull" (:name r))
     (pull r)))
 
+(defn indent
+  [n]
+  (apply str (take (* n 2) (repeat " "))))
+
+(defn write-yaml
+  [path data & [level]]
+  (let [level (or level 0)]
+    (cond
+      (or (vector? data) (list? data))
+      (doseq [v data]
+        (if (or (map? v) (vector? v) (list? v))
+          (do
+            (printf "%s-\n" (indent level))
+            (write-yaml path v (inc level)))
+          (printf "%s- %s\n" (indent level) v)))
+      (map? data)
+      (doseq [[k v] data]
+        (if (or (map? v) (vector? v) (list? v))
+          (do
+            (printf "%s%s:\n" (indent level) k)
+            (write-yaml path v (inc level)))
+          (printf "%s%s: %s\n" (indent level) k v)))
+      :else (printf "%s%s\n" (indent level) data))))
+
 (defn main
   [action options]
   (let [env (os/env)

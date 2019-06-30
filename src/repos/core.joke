@@ -146,7 +146,6 @@
     (if (keyword? v) (apply str (rest (str v))) v)
     v))
 
-
 (defn read-yaml
   [path]
   (let [data (yaml/read-string (slurp path))]
@@ -185,13 +184,26 @@
 (serialize ["test1" "test2" "test3" {"test4" "test4v" "test5" ["test6" "test7"]}])
 
 (defn write-yaml
-  [path data]
+  [data & [path]]
   (let [data (struct-walk
               data
               #(if (keyword? %) (apply str (rest (str %))) %)
               prepare-value-for-yaml)
         s (with-out-str (serialize data))]
-    (spit path s)))
+    (if path
+      (spit path s)
+      s)))
+
+(defn repo
+  [url & {:keys [name group]}]
+  {:name (or name (joker.filepath/base url))
+   :group (or group "__default__")
+   :tags []
+   :remotes {:name "origin"
+             :url url}
+   :branches {:name "master"
+              :remote "origin"
+              :refspec "master"}})
 
 (defn main
   [action options]

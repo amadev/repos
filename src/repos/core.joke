@@ -108,6 +108,7 @@
        (ex "git" "pull" "--rebase" (:remote b) (:refspec b))))))
 
 (defn struct-walk
+  ;; todo: recur
   [data key-func val-func & [path]]
   (cond
     (or (list? data) (vector? data)) (mapv #(struct-walk %1 key-func val-func (apply str [path ".[]"])) data)
@@ -117,6 +118,7 @@
 (defn expand-env
   [env data]
   ;; the func would be much easier if str/replace could suport repl arg as func
+  ;; todo: joker issue
   (loop [replaces (map #(list %1 (get env (apply str (rest %1)) "")) (re-seq #"\$[A-Z0-9_]+" data))
          s data]
     (if (empty? replaces)
@@ -126,16 +128,29 @@
             to (second pair)]
         (recur (rest replaces) (str/replace s from to))))))
 
-(defn process-yaml-values
+(defn process-yaml-value
   [v p]
   (if (str/ends-with? p "tags.[]")
     (keyword v)
     (expand-env (os/env) v)))
 
+(defn prepare-value-for-yaml
+  [v p]
+  (if (str/ends-with? p "tags.[]")
+    (if (keyword? v) (apply str (rest (str v))) v)
+    v))
+
+(defn prepare-key-for-yaml
+  [k]
+  (if ( "tags.[]")
+    (if (keyword? v) (apply str (rest (str v))) v)
+    v))
+
+
 (defn read-yaml
   [path]
   (let [data (yaml/read-string (slurp path))]
-    (struct-walk data keyword process-yaml-values)))
+    (struct-walk data keyword process-yaml-value)))
 
 (defn pull-all
   [repos]
@@ -147,25 +162,36 @@
   [n]
   (apply str (take (* n 2) (repeat " "))))
 
-(defn write-yaml
-  [path data & [level]]
+(defn serialize
+  ;; todo: recur
+  [data & [level]]
   (let [level (or level 0)]
-    (cond
-      (or (vector? data) (list? data))
-      (doseq [v data]
-        (if (or (map? v) (vector? v) (list? v))
-          (do
-            (printf "%s-\n" (indent level))
-            (write-yaml path v (inc level)))
-          (printf "%s- %s\n" (indent level) v)))
-      (map? data)
-      (doseq [[k v] data]
-        (if (or (map? v) (vector? v) (list? v))
-          (do
-            (printf "%s%s:\n" (indent level) k)
-            (write-yaml path v (inc level)))
-          (printf "%s%s: %s\n" (indent level) k v)))
-      :else (printf "%s%s\n" (indent level) data))))
+   (cond
+     (or (vector? data) (list? data))
+     (doseq [v data]
+       (if (or (map? v) (vector? v) (list? v))
+         (do
+           (printf "%s-\n" (indent level))
+           (serialize v (inc level)))
+         (printf "%s- %s\n" (indent level) v)))
+     (map? data)
+     (doseq [[k v] data]
+       (if (or (map? v) (vector? v) (list? v))
+         (do
+           (printf "%s%s:\n" (indent level) k)
+           (serialize v (inc level)))
+         (printf "%s%s: %s\n" (indent level) k v)))
+     :else (printf "%s%s\n" (indent level) data))))
+(serialize ["test1" "test2" "test3" {"test4" "test4v" "test5" ["test6" "test7"]}])
+
+(defn write-yaml
+  [path data]
+  (let [data (struct-walk
+              data
+              #(if (keyword? %) (apply str (rest (str %))) %)
+              prepare-value-for-yaml)
+        s (with-out-str (serialize data))]
+    (spit path s)))
 
 (defn main
   [action options]

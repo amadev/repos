@@ -175,13 +175,12 @@
          (printf "%s- %s\n" (indent level) v)))
      (map? data)
      (doseq [[k v] data]
-       (if (or (map? v) (vector? v) (list? v))
+       (if (and (not (empty? v)) (or (map? v) (vector? v) (list? v)))
          (do
            (printf "%s%s:\n" (indent level) k)
            (serialize v (inc level)))
-         (printf "%s%s: %s\n" (indent level) k v)))
+         (printf "%s%s: %s\n" (indent level) k (str v))))
      :else (printf "%s%s\n" (indent level) data))))
-(serialize ["test1" "test2" "test3" {"test4" "test4v" "test5" ["test6" "test7"]}])
 
 (defn write-yaml
   [data & [path]]

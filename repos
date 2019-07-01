@@ -4,16 +4,18 @@
 (ns script
   (:require [joker.tools.cli :as cli])
   (:require [joker.os :as os])
-  (:require [src.repos.core :as r]))
+  (:require [src.repos.core :as r])
+  (:require [joker.string :as str]))
 
 (def *program* "repos")
 (def *version* [0 1 0])
 (def *actions*
-  [[
-    "pull" "Clone or update all specified repositories"]])
+  [["pull" "Clone or update all specified repositories"]
+   ["add" "Add a new repo to DB"]])
 (def *opts*
   [["-v" "--verbose" :default 0 :update-fn inc]
-   ["-h" "--help" "Show this summary" :default false]])
+   ["-h" "--help" "Show this summary"]
+   ["-p" "--path" "New repository clone path" :required true]])
 
 (defn usage
   [summary errors]
@@ -30,6 +32,8 @@
 
 (let [{:keys [options arguments summary errors]} (cli/parse-opts *command-line-args* *opts*)
       {:keys [verbose help]} options]
+  (when (<= 2 verbose)
+    (println "parsed args, options:" arguments options))
   (cond
     errors
     (do
@@ -40,19 +44,19 @@
     (usage summary nil)
 
     (not (empty? arguments))
-    (if (and (= 1 (count arguments)))
-     (try
-       (r/main (first arguments) options)
-       (catch Error e
-         (if (ex-message e)
-           (printf "Error: %s\nCause: %s\nTry verbose for details\n"
-                   (ex-message e)
-                   (:cause (ex-data e)))
-           (printf "Error: %s\n" e))
-         (os/exit 1)))
-     (do
-       (usage summary ["Unknown action"])
-      (os/exit -1)))
+    (if (<= 1 (count arguments))
+      (try
+        (r/main arguments options)
+        (catch Error e
+          (if (ex-message e)
+            (printf "Error: %s\nCause: %s\nTry verbose for details\n"
+                    (ex-message e)
+                    (:cause (ex-data e)))
+            (printf "Error: %s\n" e))
+          (os/exit 1)))
+      (do
+        (usage summary ["Unknown action"])
+        (os/exit -1)))
 
     :else
     (do

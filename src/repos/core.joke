@@ -140,12 +140,6 @@
     (if (keyword? v) (apply str (rest (str v))) v)
     v))
 
-(defn prepare-key-for-yaml
-  [k]
-  (if ( "tags.[]")
-    (if (keyword? v) (apply str (rest (str v))) v)
-    v))
-
 (defn read-yaml
   [path]
   (let [data (yaml/read-string (slurp path))]
@@ -194,21 +188,34 @@
       s)))
 
 (defn repo
-  [url & {:keys [name group]}]
-  {:name (or name (joker.filepath/base url))
-   :group (or group "__default__")
-   :tags []
-   :remotes {:name "origin"
-             :url url}
-   :branches {:name "master"
-              :remote "origin"
-              :refspec "master"}})
+  ([url] (repo url {}))
+  ([url options]
+   (let [name (or (:name options) (joker.filepath/base url))
+         path (or (:path options) (expand-env (os/env) (format "$HOME/src/%s" name)))]
+    (info "add a repo" name "to" path)
+    {:name name
+     :path path
+     :group (or (:group options) "__default__")
+     :tags []
+     :remotes [{:name "origin"
+                :url url}]
+     :branches [{:name "master"
+                 :remote "origin"
+                 :refspec "master"}]})))
+
+(defn add-repo
+  [db path url options]
+  (write-yaml
+   (assoc db :repos (conj (:repos db) (repo url options)))
+   path))
 
 (defn main
-  [action options]
+  [args options]
   (let [env (os/env)
         db-path (get env "REPOS_DB" "$HOME/.repos/db.yaml")
         db (read-yaml (expand-env (os/env) db-path))]
     (binding [*context* {:log_level (get (vec (reverse *levels*)) (:verbose options) :debug)}]
-      (case action
-        "pull" (pull-all (:repos db))))))
+      (case (first args)
+        "pull" (pull-all (:repos db))
+        ;; todo: check agrs number for each action
+        "add" (add-repo db db-path (second args) options)))))

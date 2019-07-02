@@ -127,7 +127,7 @@
 
 (defn log
   [message level]
-  (when (>= (index level *levels*) (index (:log_level *context*) *levels*))
+  (when (>= (index level *levels*) (index (:log_level *context* :debug) *levels*))
     (println (format "[%s] %s %s"
                      (apply str (-> level str str/upper-case rest))
                      (time/format (time/now) time/rfc3339)

@@ -77,10 +77,14 @@ repos:
       - name: b1
         remote: origin
         refspec: b1
+groups:
+  - name: root
+  - name: openstack
+    parent: root
 EOF
 
-REPOS_DB=/tmp/repos-test/db.yaml $__DIR__/../repos add /tmp/repos-test/orig/r3 --path /tmp/repos-test/r3 -vv
+REPOS_GROUPS=/tmp/repos-test/groups/ REPOS_DB=/tmp/repos-test/db.yaml $__DIR__/../repos add /tmp/repos-test/orig/r3 --path /tmp/repos-test/r3 -vv
 
-REPOS_DB=/tmp/repos-test/db.yaml $__DIR__/../repos pull -vv
+REPOS_GROUPS=/tmp/repos-test/groups/ REPOS_DB=/tmp/repos-test/db.yaml $__DIR__/../repos pull -vv
 
-REPOS_DB=/tmp/repos-test/db.yaml $__DIR__/../repos pull -vv
+REPOS_GROUPS=/tmp/repos-test/groups/ REPOS_DB=/tmp/repos-test/db.yaml $__DIR__/../repos pull -vv

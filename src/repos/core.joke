@@ -4,7 +4,8 @@
   (:require [joker.os :as os])
   (:require [joker.yaml :as yaml])
   (:require [joker.string :as str])
-  (:require [joker.time :as time]))
+  (:require [joker.time :as time])
+  (:require [joker.filepath :as filepath]))
 
 (def *context* {})
 (def *levels* [:debug :info :error])
@@ -202,7 +203,7 @@
     (info "add a repo" name "to" path)
     {:name name
      :path path
-     :group (or (:group options) "__default__")
+     :group (or (:group options) "root")
      :tags []
      :remotes [{:name "origin"
                 :url url}]
@@ -216,7 +217,7 @@
    (assoc db :repos (conj (:repos db) (repo url options)))
    path))
 
-(defn group-path
+(defn get-group-path
   [group groups]
   (loop [group group
          result []]
@@ -226,18 +227,31 @@
         (recur (groups group) (conj result group))))))
 
 (defn create-groups
-  [groups]
+  [groups dir]
   (let [group-dict (into {} (for [g groups] [(:name g) (:parent g)]))]
     (doseq [[k v] group-dict]
-      (println "path:" (group-path k group-dict)))))
+      (ex "mkdir" "-p" (filepath/join dir (get-group-path k group-dict))))))
+
+(defn put-repos-into-groups
+  [repos groups dir]
+  (let [group-dict (into {} (for [g groups] [(:name g) (:parent g)]))]
+    (doseq [r repos]
+      (let [group-path (filepath/join dir (get-group-path (:group r) group-dict))
+            repo-target-path (filepath/join group-path (:name r))]
+        (ex "mkdir" "-p" group-path)
+        (ex "rm" "-f" repo-target-path)
+        (ex "ln" "-s" (:path r) repo-target-path)))))
 
 (defn main
   [args options]
   (let [env (os/env)
-        db-path (get env "REPOS_DB" "$HOME/.repos/db.yaml")
-        db (read-yaml (expand-env (os/env) db-path))]
+        db-path (expand-env (os/env) (get env "REPOS_DB" "$HOME/.repos/db.yaml"))
+        groups-path (expand-env (os/env) (get env "REPOS_GROUPS" "$HOME/.repos/groups/"))
+        db (read-yaml db-path)]
     (binding [*context* {:log_level (get (vec (reverse *levels*)) (:verbose options) :debug)}]
       (case (first args)
         "pull" (pull-all (:repos db))
         ;; todo: check agrs number for each action
-        "add" (add-repo db db-path (second args) options)))))
+        "add" (add-repo db db-path (second args) options))
+      ;; to allow group conf update it's issued everytime
+      (put-repos-into-groups (:repos db) (:groups db) groups-path))))

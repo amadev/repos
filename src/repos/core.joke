@@ -9,7 +9,10 @@
 (def *context* {})
 (def *levels* [:debug :info :error])
 
+(declare debug)
 (declare ex)
+
+;; === utils ===
 
 (defn dir?
   [path]
@@ -18,14 +21,108 @@
     (catch Error e
       false)))
 
+(defmacro in-dir
+  [dir & body]
+  `(let [save-dir# (os/cwd)]
+     (os/chdir ~dir)
+     ~@body
+     (os/chdir save-dir#)))
+
 (defn index
   [i v]
   (ffirst (filter #(= (second %) i) (map-indexed vector v))))
 
 (defn write
   [path string]
-  ;; todo: didn't find the proper way to do it on joker
+  ;; todo: didn't find the proper way to append string to file in joker
   (ex "bash" "-c" (format "echo '%s' >> %s" string path)))
+
+(defn ex
+  [& args]
+  (let [args (filter (complement empty?) args)
+        s-args (str/join " " args)]
+    (debug "call:" s-args)
+    (let [r (os/exec (first args) {:args (rest args)})]
+      (debug "result:" r)
+      (when-not (:success r)
+        (throw (ex-info "Exec failed"
+                        {:cause (:err r)}))))))
+
+(defn struct-walk
+  ;; todo: recur
+  [data key-func val-func & [path]]
+  (cond
+    (or (list? data) (vector? data)) (mapv #(struct-walk %1 key-func val-func (apply str [path ".[]"])) data)
+    (map? data) (into {} (for [[k v] data] [(key-func k) (struct-walk v key-func val-func (apply str [path "." k]))]))
+    :else (val-func data path)))
+
+(defn expand-env
+  [env data]
+  ;; the func would be much easier if str/replace could suport repl arg as func
+  ;; todo: joker issue
+  (loop [replaces (map #(list %1 (get env (apply str (rest %1)) "")) (re-seq #"\$[A-Z0-9_]+" data))
+         s data]
+    (if (empty? replaces)
+      s
+      (let [pair (first replaces)
+            from (first pair)
+            to (second pair)]
+        (recur (rest replaces) (str/replace s from to))))))
+
+(defn process-yaml-value
+  [v p]
+  (if (str/ends-with? p "tags.[]")
+    (keyword v)
+    (expand-env (os/env) v)))
+
+(defn prepare-value-for-yaml
+  [v p]
+  (if (str/ends-with? p "tags.[]")
+    (if (keyword? v) (apply str (rest (str v))) v)
+    v))
+
+(defn read-yaml
+  [path]
+  (let [data (yaml/read-string (slurp path))]
+    (struct-walk data keyword process-yaml-value)))
+
+(defn indent
+  [n]
+  (apply str (take (* n 2) (repeat " "))))
+
+(defn serialize
+  ;; todo: recur
+  [data & [level]]
+  (let [level (or level 0)]
+   (cond
+     (or (vector? data) (list? data))
+     (doseq [v data]
+       (if (or (map? v) (vector? v) (list? v))
+         (do
+           (printf "%s-\n" (indent level))
+           (serialize v (inc level)))
+         (printf "%s- %s\n" (indent level) v)))
+     (map? data)
+     (doseq [[k v] data]
+       (if (and (not (empty? v)) (or (map? v) (vector? v) (list? v)))
+         (do
+           (printf "%s%s:\n" (indent level) k)
+           (serialize v (inc level)))
+         (printf "%s%s: %s\n" (indent level) k (str v))))
+     :else (printf "%s%s\n" (indent level) data))))
+
+(defn write-yaml
+  [data & [path]]
+  (let [data (struct-walk
+              data
+              #(if (keyword? %) (apply str (rest (str %))) %)
+              prepare-value-for-yaml)
+        s (with-out-str (serialize data))]
+    (if path
+      (spit path s)
+      s)))
+
+;; === logs ===
 
 (defn log
   [message level]
@@ -48,23 +145,7 @@
   [message & args]
   (log (apply str (interpose " " (cons message args))) :error))
 
-(defn ex
-  [& args]
-  (let [args (filter (complement empty?) args)
-        s-args (str/join " " args)]
-    (debug "call:" s-args)
-    (let [r (os/exec (first args) {:args (rest args)})]
-      (debug "result:" r)
-      (when-not (:success r)
-        (throw (ex-info "Exec failed"
-                        {:cause (:err r)}))))))
-
-(defmacro in-dir
-  [dir & body]
-  `(let [save-dir# (os/cwd)]
-     (os/chdir ~dir)
-     ~@body
-     (os/chdir save-dir#)))
+;; === logic ===
 
 (defn reload-branches
   [repo]
@@ -107,85 +188,11 @@
        (ex "git" "checkout" (:name b))
        (ex "git" "pull" "--rebase" (:remote b) (:refspec b))))))
 
-(defn struct-walk
-  ;; todo: recur
-  [data key-func val-func & [path]]
-  (cond
-    (or (list? data) (vector? data)) (mapv #(struct-walk %1 key-func val-func (apply str [path ".[]"])) data)
-    (map? data) (into {} (for [[k v] data] [(key-func k) (struct-walk v key-func val-func (apply str [path "." k]))]))
-    :else (val-func data path)))
-
-(defn expand-env
-  [env data]
-  ;; the func would be much easier if str/replace could suport repl arg as func
-  ;; todo: joker issue
-  (loop [replaces (map #(list %1 (get env (apply str (rest %1)) "")) (re-seq #"\$[A-Z0-9_]+" data))
-         s data]
-    (if (empty? replaces)
-      s
-      (let [pair (first replaces)
-            from (first pair)
-            to (second pair)]
-        (recur (rest replaces) (str/replace s from to))))))
-
-(defn process-yaml-value
-  [v p]
-  (if (str/ends-with? p "tags.[]")
-    (keyword v)
-    (expand-env (os/env) v)))
-
-(defn prepare-value-for-yaml
-  [v p]
-  (if (str/ends-with? p "tags.[]")
-    (if (keyword? v) (apply str (rest (str v))) v)
-    v))
-
-(defn read-yaml
-  [path]
-  (let [data (yaml/read-string (slurp path))]
-    (struct-walk data keyword process-yaml-value)))
-
 (defn pull-all
   [repos]
   (doseq [r repos]
     (info "pull" (:name r))
     (pull r)))
-
-(defn indent
-  [n]
-  (apply str (take (* n 2) (repeat " "))))
-
-(defn serialize
-  ;; todo: recur
-  [data & [level]]
-  (let [level (or level 0)]
-   (cond
-     (or (vector? data) (list? data))
-     (doseq [v data]
-       (if (or (map? v) (vector? v) (list? v))
-         (do
-           (printf "%s-\n" (indent level))
-           (serialize v (inc level)))
-         (printf "%s- %s\n" (indent level) v)))
-     (map? data)
-     (doseq [[k v] data]
-       (if (and (not (empty? v)) (or (map? v) (vector? v) (list? v)))
-         (do
-           (printf "%s%s:\n" (indent level) k)
-           (serialize v (inc level)))
-         (printf "%s%s: %s\n" (indent level) k (str v))))
-     :else (printf "%s%s\n" (indent level) data))))
-
-(defn write-yaml
-  [data & [path]]
-  (let [data (struct-walk
-              data
-              #(if (keyword? %) (apply str (rest (str %))) %)
-              prepare-value-for-yaml)
-        s (with-out-str (serialize data))]
-    (if path
-      (spit path s)
-      s)))
 
 (defn repo
   ([url] (repo url {}))

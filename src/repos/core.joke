@@ -47,7 +47,9 @@
       (debug "result:" r)
       (when-not (:success r)
         (throw (ex-info "Exec failed"
-                        {:cause (:err r)}))))))
+                        {:cause (:err r)})))
+      r
+      )))
 
 (defn struct-walk
   ;; todo: recur

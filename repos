@@ -44,22 +44,19 @@
     help
     (usage summary nil)
 
-    (not (empty? arguments))
-    (if (<= 1 (count arguments))
-      (try
-        (r/main arguments options)
-        (catch Error e
-          (if (ex-message e)
-            (printf "Error: %s\nCause: %s\nTry verbose for details\n"
-                    (ex-message e)
-                    (:cause (ex-data e)))
-            (printf "Error: %s\n" e))
-          (os/exit 1)))
-      (do
-        (usage summary ["Unknown action"])
-        (os/exit -1)))
+    (and (not (empty? arguments))
+         ((set (map first *actions*)) (first arguments)))
+    (try
+      (r/main arguments options)
+      (catch Error e
+        (if (ex-message e)
+          (printf "Error: %s\nCause: %s\nTry verbose for details\n"
+                  (ex-message e)
+                  (:cause (ex-data e)))
+          (printf "Error: %s\n" e))
+        (os/exit 1)))
 
     :else
     (do
-      (usage summary ["Must specify an action"])
+      (usage summary ["Must specify one available action"])
       (os/exit -1))))

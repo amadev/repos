@@ -209,6 +209,21 @@
    (assoc db :repos (conj (:repos db) (repo url options)))
    path))
 
+(defn group-path
+  [group groups]
+  (loop [group group
+         result []]
+    (if (not (= :not-exists (groups group :not-exists)))
+      (if (not (groups group))
+        (str/join "/" (reverse (conj result group)))
+        (recur (groups group) (conj result group))))))
+
+(defn create-groups
+  [groups]
+  (let [group-dict (into {} (for [g groups] [(:name g) (:parent g)]))]
+    (doseq [[k v] group-dict]
+      (println "path:" (group-path k group-dict)))))
+
 (defn main
   [args options]
   (let [env (os/env)

@@ -87,16 +87,16 @@ repos:
         refspec: master
 
 groups:
-  - name: __default__
+  - name: root
 
   - name: virt
-    parent: __default__
+    parent: root
 
   - name: openstack
     parent: virt
 
   - name: linux
-    parent: __default__
+    parent: root
 
   - name: personal
-    parent: __default__
+    parent: root

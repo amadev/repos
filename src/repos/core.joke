@@ -172,17 +172,12 @@
   [repo]
   (if (not (dir? (:path repo)))
     ;; clone
-    (let [shallow (contains? (:tags repo) :shallow)]
-      (ex "git" "clone"
-          (if shallow "--depth 1" "")
-          (format "--origin=%s" (-> repo :remotes first :name))
-          (format "--branch=%s" (-> repo :branches first :name))
-          (-> repo :remotes first :url)
-          (:path repo))
-      (reload-branches repo)
-      ;; todo: add group processing
-      ;; (os/exec "mkdir -p group_path; ln -s repo_path group_path/repo_name")
-      )
+    (ex "git" "clone"
+        (if (some #(= % :shallow) (:tags repo)) "--depth=1" "")
+        (format "--origin=%s" (-> repo :remotes first :name))
+        (format "--branch=%s" (-> repo :branches first :name))
+        (-> repo :remotes first :url)
+        (:path repo))
     ;; pull
     (in-dir
      (:path repo)
@@ -205,6 +200,7 @@
     (info "add a repo" name "to" path)
     {:name name
      :path path
+     ;; todo: get default group from context
      :group (or (:group options) "root")
      :tags []
      :remotes [{:name "origin"

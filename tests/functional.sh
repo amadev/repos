@@ -65,7 +65,8 @@ repos:
 
   - name: r2
     path: /tmp/repos-test/r2
-    tags: []
+    tags:
+      - shallow
     group: openstack
     remotes:
       - name: origin
@@ -74,9 +75,6 @@ repos:
       - name: master
         remote: origin
         refspec: master
-      - name: b1
-        remote: origin
-        refspec: b1
 groups:
   - name: root
   - name: openstack

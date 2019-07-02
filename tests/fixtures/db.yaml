@@ -35,7 +35,7 @@ repos:
     group: linux
     remotes:
       - name: origin
-      - url: git@github.com:torvalds/linux.git
+        url: git@github.com:torvalds/linux.git
     branches:
       - name: master
         remote: origin

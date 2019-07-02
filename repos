@@ -11,7 +11,8 @@
 (def *version* [0 1 0])
 (def *actions*
   [["pull" "Clone or update all specified repositories"]
-   ["add" "Add a new repo to DB"]])
+   ["add" "Add a new repo to DB"]
+   ["list" "Show structure of repositories"]])
 (def *opts*
   [["-v" "--verbose" :default 0 :update-fn inc]
    ["-h" "--help" "Show this summary"]

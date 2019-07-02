@@ -242,6 +242,12 @@
           (ex "rm" "-f" repo-target-path)
           (ex "ln" "-s" (:path r) repo-target-path))))))
 
+(defn repo-list
+  [dir]
+  (when (dir? dir)
+    (in-dir dir
+            (println (:out (ex "bash" "-c" "find . | sed -e 's/[^-][^\\/]*\\// |/g' -e 's/|\\([^ ]\\)/|-\\1/'"))))))
+
 (defn main
   [args options]
   (let [env (os/env)
@@ -260,6 +266,6 @@
       (case (first args)
         "pull" (pull-all (:repos db))
         ;; todo: check agrs number for each action
-        "add" (add-repo db db-path (second args) options))
-      ;; to allow group conf update it's issued everytime
-      (put-repos-into-groups (:repos db) (:groups db) groups-path))))
+        "add" (add-repo db db-path (second args) options)
+        "list" (repo-list groups-dir))
+      )))

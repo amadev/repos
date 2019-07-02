@@ -88,3 +88,5 @@ REPOS_GROUPS=/tmp/repos-test/groups/ REPOS_DB=/tmp/repos-test/db.yaml $__DIR__/.
 REPOS_GROUPS=/tmp/repos-test/groups/ REPOS_DB=/tmp/repos-test/db.yaml $__DIR__/../repos pull -vv
 
 REPOS_GROUPS=/tmp/repos-test/groups/ REPOS_DB=/tmp/repos-test/db.yaml $__DIR__/../repos pull -vv
+
+REPOS_GROUPS=/tmp/repos-test/groups/ REPOS_DB=/tmp/repos-test/db.yaml $__DIR__/../repos list -vv

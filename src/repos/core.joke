@@ -226,29 +226,35 @@
         (str/join "/" (reverse (conj result group)))
         (recur (groups group) (conj result group))))))
 
-(defn create-groups
-  [groups dir]
-  (let [group-dict (into {} (for [g groups] [(:name g) (:parent g)]))]
-    (doseq [[k v] group-dict]
-      (ex "mkdir" "-p" (filepath/join dir (get-group-path k group-dict))))))
-
 (defn put-repos-into-groups
   [repos groups dir]
   (let [group-dict (into {} (for [g groups] [(:name g) (:parent g)]))]
     (doseq [r repos]
-      (let [group-path (filepath/join dir (get-group-path (:group r) group-dict))
-            repo-target-path (filepath/join group-path (:name r))]
-        (ex "mkdir" "-p" group-path)
-        (ex "rm" "-f" repo-target-path)
-        (ex "ln" "-s" (:path r) repo-target-path)))))
+      (let [group-path (get-group-path (:group r) group-dict)]
+        (when-not group-path
+          (throw (ex-info (format "Not found path for group %s" (:group r))
+                          {:cause "Probably group hierarchy is defined incorrectly"})))
+        (let [group-path-full (filepath/join dir group-path)
+              repo-target-path (filepath/join group-path-full (:name r))]
+          (ex "mkdir" "-p" group-path-full)
+          (ex "rm" "-f" repo-target-path)
+          (ex "ln" "-s" (:path r) repo-target-path))))))
 
 (defn main
   [args options]
   (let [env (os/env)
         db-path (expand-env (os/env) (get env "REPOS_DB" "$HOME/.repos/db.yaml"))
-        groups-path (expand-env (os/env) (get env "REPOS_GROUPS" "$HOME/.repos/groups/"))
+        groups-dir (expand-env (os/env) (get env "REPOS_GROUPS" "$HOME/.repos/groups/"))
         db (read-yaml db-path)]
+
     (binding [*context* {:log_level (get (vec (reverse *levels*)) (:verbose options) :debug)}]
+      (debug "db-path" db-path)
+      (debug "groups-dir" groups-dir)
+      ;; to allow group conf update via DB file it's issued everytime
+      ;; group tree in file system corresponds to config always
+      ;; some link to repo may be broken due to repo is not pulled yet
+      ;; groups withot repo in it will not be created
+      (put-repos-into-groups (:repos db) (:groups db) groups-dir)
       (case (first args)
         "pull" (pull-all (:repos db))
         ;; todo: check agrs number for each action

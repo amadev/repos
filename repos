@@ -17,7 +17,8 @@
 (def *opts*
   [["-v" "--verbose" :default 0 :update-fn inc]
    ["-h" "--help" "Show this summary"]
-   ["-p" "--path" "New repository clone path" :required true]])
+   ["-p" "--path" "New repository clone path" :required true]
+   ["-g" "--group" "Group name allows to filter repository list" :required true]])
 
 (defn usage
   [summary errors]

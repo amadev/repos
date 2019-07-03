@@ -217,26 +217,26 @@
 
 (defn get-group-path
   [group groups]
-  (loop [group group
-         result []]
-    (if (not (= :not-exists (groups group :not-exists)))
-      (if (not (groups group))
-        (str/join "/" (reverse (conj result group)))
-        (recur (groups group) (conj result group))))))
+  (let [group-dict (into {} (for [g groups] [(:name g) (:parent g)]))]
+    (loop [group group
+           result []]
+      (if (not (= :not-exists (get group-dict group :not-exists)))
+        (if (not (group-dict group))
+          (str/join "/" (reverse (conj result group)))
+          (recur (group-dict group) (conj result group)))))))
 
 (defn put-repos-into-groups
   [repos groups dir]
-  (let [group-dict (into {} (for [g groups] [(:name g) (:parent g)]))]
-    (doseq [r repos]
-      (let [group-path (get-group-path (:group r) group-dict)]
-        (when-not group-path
-          (throw (ex-info (format "Not found path for group %s" (:group r))
-                          {:cause "Probably group hierarchy is defined incorrectly"})))
-        (let [group-path-full (filepath/join dir group-path)
-              repo-target-path (filepath/join group-path-full (:name r))]
-          (ex "mkdir" "-p" group-path-full)
-          (ex "rm" "-f" repo-target-path)
-          (ex "ln" "-s" (:path r) repo-target-path))))))
+  (doseq [r repos]
+    (let [group-path (get-group-path (:group r) groups)]
+      (when-not group-path
+        (throw (ex-info (format "Not found path for group %s" (:group r))
+                        {:cause "Probably group hierarchy is defined incorrectly"})))
+      (let [group-path-full (filepath/join dir group-path)
+            repo-target-path (filepath/join group-path-full (:name r))]
+        (ex "mkdir" "-p" group-path-full)
+        (ex "rm" "-f" repo-target-path)
+        (ex "ln" "-s" (:path r) repo-target-path)))))
 
 (defn repo-list
   [dir]
@@ -252,14 +252,14 @@
 
 (defn main
   [args options]
-  (let [env (os/env)
-        db-path (expand-env (os/env) (get env "REPOS_DB" "$HOME/.repos/db.yaml"))
-        groups-dir (expand-env (os/env) (get env "REPOS_GROUPS" "$HOME/.repos/groups/"))
-        db (read-yaml db-path)]
-
-    (binding [*context* {:log_level (get (vec (reverse *levels*)) (:verbose options) :debug)}]
+  (binding [*context* {:log_level (get (vec (reverse *levels*)) (:verbose options) :debug)}]
+    (let [env (os/env)
+          db-path (expand-env (os/env) (get env "REPOS_DB" "$HOME/.repos/db.yaml"))
+          db (read-yaml db-path)
+          groups-dir (expand-env (os/env) (get env "REPOS_GROUPS" "$HOME/.repos/groups/"))
+          current-group (filepath/join groups-dir (str (get-group-path (:group options) (:groups db))))]
       (debug "db-path" db-path)
-      (debug "groups-dir" groups-dir)
+      (debug "current-group" current-group)
       ;; to allow group conf update via DB file it's issued everytime
       ;; group tree in file system corresponds to config always
       ;; some link to repo may be broken due to repo is not pulled yet
@@ -269,6 +269,6 @@
         "pull" (pull-all (:repos db))
         ;; todo: check agrs number for each action
         "add" (add-repo db db-path (second args) options)
-        "list" (repo-list groups-dir)
-        "search" (search (second args) groups-dir))
+        "list" (repo-list current-group)
+        "search" (search (second args) current-group))
       )))

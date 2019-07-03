@@ -31,10 +31,12 @@
     (println "\nErrors:")
     (run! println errors)))
 
-(let [{:keys [options arguments summary errors]} (cli/parse-opts *command-line-args* *opts*)
+(let [[args _ rest-args] (partition-by #(= % "--") *command-line-args*)
+      {:keys [options arguments summary errors]} (cli/parse-opts args *opts*)
+      options (assoc options :rest-args rest-args)
       {:keys [verbose help]} options]
   (when (<= 2 verbose)
-    (println "parsed args, options:" arguments options))
+    (println "parsed args, options, rest args:" arguments options rest-args))
   (cond
     errors
     (do

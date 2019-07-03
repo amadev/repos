@@ -244,6 +244,12 @@
     (in-dir dir
             (println (:out (ex "bash" "-c" "find . | sed -e 's/[^-][^\\/]*\\// |/g' -e 's/|\\([^ ]\\)/|-\\1/'"))))))
 
+(defn search
+  [word dir]
+  (in-dir dir
+          (println (:out (ex "grep" "-HRin" word))))
+  )
+
 (defn main
   [args options]
   (let [env (os/env)
@@ -263,5 +269,6 @@
         "pull" (pull-all (:repos db))
         ;; todo: check agrs number for each action
         "add" (add-repo db db-path (second args) options)
-        "list" (repo-list groups-dir))
+        "list" (repo-list groups-dir)
+        "search" (search (second args) groups-dir))
       )))

@@ -60,11 +60,11 @@
     :else (val-func data path)))
 
 (defn expand-env
-  [env data]
+  [s]
   ;; the func would be much easier if str/replace could suport repl arg as func
   ;; todo: joker issue
-  (loop [replaces (map #(list %1 (get env (apply str (rest %1)) "")) (re-seq #"\$[A-Z0-9_]+" data))
-         s data]
+  (loop [replaces (map #(list %1 (get (:env *context*) (apply str (rest %1)) "")) (re-seq #"\$[A-Z0-9_]+" s))
+         s s]
     (if (empty? replaces)
       s
       (let [pair (first replaces)
@@ -76,7 +76,7 @@
   [v p]
   (if (str/ends-with? p "tags.[]")
     (keyword v)
-    (expand-env (os/env) v)))
+    (expand-env v)))
 
 (defn prepare-value-for-yaml
   [v p]
@@ -196,7 +196,7 @@
   ([url] (repo url {}))
   ([url options]
    (let [name (or (:name options) (joker.filepath/base url))
-         path (or (:path options) (expand-env (os/env) (format "$HOME/src/%s" name)))]
+         path (or (:path options) (expand-env (format "$HOME/src/%s" name)))]
     (info "add a repo" name "to" path)
     {:name name
      :path path
@@ -252,11 +252,11 @@
 
 (defn main
   [args options]
-  (binding [*context* {:log_level (get (vec (reverse *levels*)) (:verbose options) :debug)}]
-    (let [env (os/env)
-          db-path (expand-env (os/env) (get env "REPOS_DB" "$HOME/.repos/db.yaml"))
+  (binding [*context* {:log_level (get (vec (reverse *levels*)) (:verbose options) :debug)
+                       :env (os/env)}]
+    (let [db-path (expand-env (get (:env *context*) "REPOS_DB" "$HOME/.repos/db.yaml"))
           db (read-yaml db-path)
-          groups-dir (expand-env (os/env) (get env "REPOS_GROUPS" "$HOME/.repos/groups/"))
+          groups-dir (expand-env (get (:env *context*) "REPOS_GROUPS" "$HOME/.repos/groups/"))
           current-group (filepath/join groups-dir (str (get-group-path (:group options) (:groups db))))]
       (debug "db-path" db-path)
       (debug "current-group" current-group)

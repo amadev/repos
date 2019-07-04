@@ -249,8 +249,12 @@
   (in-dir
    dir
    (let [ex-args (concat (str/split command #" ") [search-string dir] args)]
-     (println (:out (apply ex ex-args)))))
-  )
+     (try
+       (println (:out (apply ex ex-args)))
+       (catch Error e
+         (if (empty? (:cause (ex-data e)))
+           (throw (ex-info "Nothing found" (assoc (ex-data e) :cause "Search command exit code -1")))
+           (throw (ex-info (ex-message e) (ex-data e)))))))))
 
 (defn main
   [args options]

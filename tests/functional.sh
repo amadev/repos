@@ -9,7 +9,7 @@ rm -rf /tmp/repos-test/
 mkdir -p /tmp/repos-test/orig/{r1,r2,r3}
 
 cd /tmp/repos-test/orig/r1
-touch master-r1
+echo master-r1-content > master-r1
 git init
 git add -A
 git commit -m "Auto-commit master-r1"
@@ -19,7 +19,7 @@ git add -A
 git commit -m "Auto-commit b1-r1"
 
 cd /tmp/repos-test/orig/r2
-touch master-r2
+echo master-r2-content > master-r2
 git init
 git add -A
 git commit -m "Auto-commit master-r2"
@@ -37,6 +37,14 @@ git checkout -b b1
 touch b1-r3
 git add -A
 git commit -m "Auto-commit b1-r3"
+
+cat << 'EOF' > /tmp/repos-test/config.yaml
+db: /tmp/repos-test/db.yaml
+groups: /tmp/repos-test/groups/
+search_command: grep -HRin
+repos_default_directory: $HOME/src/
+log: /var/log/repos/repos.log
+EOF
 
 cat << EOF > /tmp/repos-test/db.yaml
 repos:
@@ -81,10 +89,12 @@ groups:
     parent: root
 EOF
 
-REPOS_GROUPS=/tmp/repos-test/groups/ REPOS_DB=/tmp/repos-test/db.yaml $__DIR__/../repos add /tmp/repos-test/orig/r3 --path /tmp/repos-test/r3 -vv
+REPOS_CONFIG=/tmp/repos-test/config.yaml $__DIR__/../repos add /tmp/repos-test/orig/r3 --path /tmp/repos-test/r3 -vv
 
-REPOS_GROUPS=/tmp/repos-test/groups/ REPOS_DB=/tmp/repos-test/db.yaml $__DIR__/../repos pull -vv
+REPOS_CONFIG=/tmp/repos-test/config.yaml $__DIR__/../repos pull -vv
 
-REPOS_GROUPS=/tmp/repos-test/groups/ REPOS_DB=/tmp/repos-test/db.yaml $__DIR__/../repos pull -vv
+REPOS_CONFIG=/tmp/repos-test/config.yaml $__DIR__/../repos pull -vv
 
-REPOS_GROUPS=/tmp/repos-test/groups/ REPOS_DB=/tmp/repos-test/db.yaml $__DIR__/../repos list -vv
+REPOS_CONFIG=/tmp/repos-test/config.yaml $__DIR__/../repos list -vv
+
+REPOS_CONFIG=/tmp/repos-test/config.yaml $__DIR__/../repos search master-r2-content -vv

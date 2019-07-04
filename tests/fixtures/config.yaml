@@ -1,5 +1,5 @@
-- db: $HOME/.repos/db.yaml
-- groups: $HOME/.repos/
-- search_command: grep -rhin %s
-- repos_default_directory: $HOME/src/
-- log: /var/log/repos/repos.log
+db: $HOME/.repos/db.yaml
+groups: $HOME/.repos/
+search_command: grep -HRin
+repos_default_directory: $HOME/src/
+log: /var/log/repos/repos.log

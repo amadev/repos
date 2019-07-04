@@ -245,18 +245,22 @@
             (println (:out (ex "bash" "-c" "find . | sed -e 's/[^-][^\\/]*\\// |/g' -e 's/|\\([^ ]\\)/|-\\1/'"))))))
 
 (defn search
-  [word dir]
-  (in-dir dir
-          (println (:out (ex "grep" "-HRin" word))))
+  [command search-string dir args]
+  (in-dir
+   dir
+   (let [ex-args (concat (str/split command #" ") [search-string dir] args)]
+     (println (:out (apply ex ex-args)))))
   )
 
 (defn main
   [args options]
   (binding [*context* {:log_level (get (vec (reverse *levels*)) (:verbose options) :debug)
                        :env (os/env)}]
-    (let [db-path (expand-env (get (:env *context*) "REPOS_DB" "$HOME/.repos/db.yaml"))
+    (let [config-path (expand-env (get (:env *context*) "REPOS_CONFIG" "$HOME/.repos/config.yaml"))
+          config (read-yaml config-path)
+          db-path (:db config)
           db (read-yaml db-path)
-          groups-dir (expand-env (get (:env *context*) "REPOS_GROUPS" "$HOME/.repos/groups/"))
+          groups-dir (:groups config)
           current-group (filepath/join groups-dir (str (get-group-path (:group options) (:groups db))))]
       (debug "db-path" db-path)
       (debug "current-group" current-group)
@@ -270,5 +274,5 @@
         ;; todo: check agrs number for each action
         "add" (add-repo db db-path (second args) options)
         "list" (repo-list current-group)
-        "search" (search (second args) current-group))
+        "search" (search (:search_command config) (second args) current-group (:rest-args options)))
       )))

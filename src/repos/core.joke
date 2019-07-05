@@ -51,13 +51,16 @@
       r
       )))
 
-(defn struct-walk
+(defn walk
   ;; todo: recur
   [data key-func val-func & [path]]
   (cond
-    (or (list? data) (vector? data)) (mapv #(struct-walk %1 key-func val-func (apply str [path ".[]"])) data)
-    (map? data) (into {} (for [[k v] data] [(key-func k) (struct-walk v key-func val-func (apply str [path "." k]))]))
-    :else (val-func data path)))
+    (or (list? data) (vector? data))
+    (mapv #(walk %1 key-func val-func (apply str [path ".[]"])) data)
+    (map? data)
+    (into {} (for [[k v] data] [(key-func k) (walk v key-func val-func (apply str [path "." k]))]))
+    :else
+    (val-func data path)))
 
 (defn expand-env
   [s]
@@ -87,7 +90,7 @@
 (defn read-yaml
   [path]
   (let [data (yaml/read-string (slurp path))]
-    (struct-walk data keyword process-yaml-value)))
+    (walk data keyword process-yaml-value)))
 
 (defn indent
   [n]
@@ -116,7 +119,7 @@
 
 (defn write-yaml
   [data & [path]]
-  (let [data (struct-walk
+  (let [data (walk
               data
               #(if (keyword? %) (apply str (rest (str %))) %)
               prepare-value-for-yaml)

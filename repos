@@ -4,8 +4,7 @@
 (ns script
   (:require [joker.tools.cli :as cli])
   (:require [joker.os :as os])
-  (:require [src.repos.core :as r])
-  (:require [joker.string :as str]))
+  (:require [src.repos.core :as r]))
 
 (def *program* "repos")
 (def *version* [0 1 0])

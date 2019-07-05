@@ -1,0 +1,37 @@
+#!/usr/bin/env joker
+;; #-*- mode: clojure; target-shell-session: "shell-joker" -*-
+
+(ns tests.test-core
+  (:require [joker.test :refer [deftest is testing run-tests]])
+  (:require [joker.string :as str])
+  (:require [src.repos.core :as core]))
+
+(deftest test-walk
+  (testing "Process basic walk cases"
+   (is (= 1 (core/walk 1 identity (fn [v p] (identity v)))))
+   (is (= nil (core/walk nil identity (fn [v p] (identity v)))))
+   (is (= "TEST1" (core/walk "test1" identity (fn [v p] (str/upper-case v)))))
+   (is (= ["TEST2" "TEST3" "TEST4"] (core/walk ["test2" "test3" "test4"] identity (fn [v p] (str/upper-case v)))))
+   (is (= {:test5 "TEST6" :test7 "TEST8"} (core/walk {"test5" "test6" "test7" "test8"} keyword (fn [v p] (str/upper-case v)))))
+   (is (= {"test5" "TEST6" "test7" "TEST8"} (core/walk {:test5 "test6" :test7 "test8"} name (fn [v p] (str/upper-case v))))))
+  (testing "Process recursive walk cases"
+    (is (=
+         {:test1 ["TEST2" "TEST3" {:test4 "TEST5"}] :test6 {:test7 "TEST8"}}
+         (core/walk {"test1" ["test2" "test3" {"test4" "test5"}] "test6" {"test7" "test8"}} keyword (fn [v p] (str/upper-case v))))))
+  (testing "Provide correct path for value update function"
+    (letfn [(process-value [v p]
+              (case v
+                "test0" (is (= p nil))
+                "test0-1" (is (= p ".[]"))
+                "test0-2" (is (= p ".[]"))
+                "test2" (is (= p ".test1.[]"))
+                "test3" (is (= p ".test1.[]"))
+                "test5" (is (= p ".test1.[].test4"))
+                "test8" (is (= p ".test6.test7"))
+                ))]
+      (core/walk "test0" keyword process-value)
+      (core/walk ["test0-1" "test0-2"] keyword process-value)
+      (core/walk {"test1" ["test2" "test3" {"test4" "test5"}] "test6" {"test7" "test8"}} keyword process-value)))
+  )
+
+(run-tests 'tests.test-core)

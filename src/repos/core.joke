@@ -33,11 +33,6 @@
   [i v]
   (ffirst (filter #(= (second %) i) (map-indexed vector v))))
 
-(defn write
-  [path string]
-  ;; todo: didn't find the proper way to append string to file in joker
-  (ex "bash" "-c" (format "echo '%s' >> %s" string path)))
-
 (defn ex
   [& args]
   (let [args (filter (complement empty?) args)
@@ -83,9 +78,7 @@
 
 (defn prepare-value-for-yaml
   [v p]
-  (if (str/ends-with? p "tags.[]")
-    (if (keyword? v) (apply str (rest (str v))) v)
-    v))
+  (if (str/ends-with? p "tags.[]") (name v) v))
 
 (defn read-yaml
   [path]
@@ -119,16 +112,16 @@
 
 (defn write-yaml
   [data & [path]]
-  (let [data (walk
-              data
-              #(if (keyword? %) (apply str (rest (str %))) %)
-              prepare-value-for-yaml)
+  (let [data (walk data name prepare-value-for-yaml)
         s (with-out-str (serialize data))]
-    (if path
-      (spit path s)
-      s)))
+    (if path (spit path s) s)))
 
 ;; === logs ===
+
+(defn write
+  [path string]
+  ;; todo: didn't find the proper way to append string to file in joker
+  (ex "bash" "-c" (format "echo '%s' >> %s" string path)))
 
 (defn log
   [message level]

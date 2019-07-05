@@ -5,7 +5,8 @@
   (:require [joker.yaml :as yaml])
   (:require [joker.string :as str])
   (:require [joker.time :as time])
-  (:require [joker.filepath :as filepath]))
+  (:require [joker.filepath :as filepath])
+  (:require [joker.set]))
 
 (def *context* {})
 (def *levels* [:debug :info :error])
@@ -25,6 +26,7 @@
 (defmacro in-dir
   [dir & body]
   `(let [save-dir# (os/cwd)]
+     (debug "chdir" ~dir)
      (os/chdir ~dir)
      ~@body
      (os/chdir save-dir#)))
@@ -183,8 +185,8 @@
        (ex "git" "pull" "--rebase" (:remote b) (:refspec b))))))
 
 (defn pull-all
-  [repos]
-  (doseq [r repos]
+  [repos groups]
+  (doseq [r (if (not (empty? groups)) (filter #(groups (:group %)) repos) repos)]
     (info "pull" (:name r))
     (pull r)))
 
@@ -252,6 +254,15 @@
            (throw (ex-info "Nothing found" (assoc (ex-data e) :cause "Search command exit code -1")))
            (throw (ex-info (ex-message e) (ex-data e)))))))))
 
+(defn get-subgroups
+  [group groups]
+  (loop [subgroups (set [group])
+         result #{}]
+    (let [subgroups (set (map #(:name %) (filter #(subgroups (:parent %)) groups)))]
+      (if (empty? subgroups)
+        result
+        (recur subgroups (joker.set/union result subgroups))))))
+
 (defn main
   [args options]
   (binding [*context* {:log_level (get (vec (reverse *levels*)) (:verbose options) :debug)
@@ -270,7 +281,7 @@
       ;; groups withot repo in it will not be created
       (put-repos-into-groups (:repos db) (:groups db) groups-dir)
       (case (first args)
-        "pull" (pull-all (:repos db))
+        "pull" (pull-all (:repos db) (get-subgroups (:group options) (:groups db)))
         ;; todo: check agrs number for each action
         "add" (add-repo db db-path (second args) options)
         "list" (repo-list current-group)

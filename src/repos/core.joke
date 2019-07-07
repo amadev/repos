@@ -44,7 +44,7 @@
       (debug "result:" r)
       (when-not (:success r)
         (throw (ex-info "Exec failed"
-                        {:cause (:err r)})))
+                        {:cause (str/join "\n" [(:out r) (:err r)])})))
       r
       )))
 
@@ -277,7 +277,11 @@
     (in-dir
      (:path repo)
      (ex "git" "add" "-A")
-     (ex "git" "commit" "-m" "Auto-commit"))))
+     (try
+       (ex "git" "commit" "-m" "Auto-commit")
+       (catch Error e
+         (when-not (str/index-of (:cause (ex-data e)) "nothing to commit")
+           (throw (ex-info (ex-message e) (ex-data e)))))))))
 
 (defn main
   [args options]
@@ -305,7 +309,7 @@
         "list" (repo-list current-group)
         "search" (search (:search_command config) (second args) current-group (:rest-args options))
         "sync" (do
-                 (do-repos (:repos db) subgroups (partial pull))
                  (do-repos (:repos db) subgroups (partial auto-commit))
+                 (do-repos (:repos db) subgroups (partial pull))
                  (do-repos (:repos db) subgroups (partial push))))
       )))

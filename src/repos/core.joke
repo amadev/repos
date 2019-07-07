@@ -184,12 +184,6 @@
        (ex "git" "checkout" (:name b))
        (ex "git" "pull" "--rebase" (:remote b) (:refspec b))))))
 
-(defn pull-all
-  [repos groups]
-  (doseq [r (if (not (empty? groups)) (filter #(groups (:group %)) repos) repos)]
-    (info "pull" (:name r))
-    (pull r)))
-
 (defn repo
   ([url] (repo url {}))
   ([url options]
@@ -263,6 +257,28 @@
         result
         (recur subgroups (joker.set/union result subgroups))))))
 
+(defn push
+  [repo]
+  (info "push" (:name repo))
+  (in-dir
+   (:path repo)
+   (doseq [b (:branches repo)]
+     (ex "git" "push" (:remote b) (format "%s:%s" (:name b) (:refspec b))))))
+
+(defn do-repos
+  [repos subgroups func]
+  (doseq [r (if (not (empty? subgroups)) (filter #(subgroups (:group %)) repos) repos)]
+    (func r)))
+
+(defn auto-commit
+  [repo]
+  (when (some #(= % :auto-commit) (:tags repo))
+    (info "auto-commit" (:name repo))
+    (in-dir
+     (:path repo)
+     (ex "git" "add" "-A")
+     (ex "git" "commit" "-m" "Auto-commit"))))
+
 (defn main
   [args options]
   (binding [*context* {:log_level (get (vec (reverse *levels*)) (:verbose options) :debug)
@@ -272,7 +288,8 @@
           db-path (:db config)
           db (read-yaml db-path)
           groups-dir (:groups config)
-          current-group (filepath/join groups-dir (str (get-group-path (:group options) (:groups db))))]
+          current-group (filepath/join groups-dir (str (get-group-path (:group options) (:groups db))))
+          subgroups (get-subgroups (:group options) (:groups db))]
       (debug "db-path" db-path)
       (debug "current-group" current-group)
       ;; to allow group conf update via DB file it's issued everytime
@@ -281,9 +298,13 @@
       ;; groups withot repo in it will not be created
       (put-repos-into-groups (:repos db) (:groups db) groups-dir)
       (case (first args)
-        "pull" (pull-all (:repos db) (get-subgroups (:group options) (:groups db)))
+        "pull" (do-repos (:repos db) subgroups (partial pull))
         ;; todo: check agrs number for each action
         "add" (add-repo db db-path (second args) options)
         "list" (repo-list current-group)
-        "search" (search (:search_command config) (second args) current-group (:rest-args options)))
+        "search" (search (:search_command config) (second args) current-group (:rest-args options))
+        "sync" (do
+                 (do-repos (:repos db) subgroups (partial pull))
+                 (do-repos (:repos db) subgroups (partial auto-commit))
+                 (do-repos (:repos db) subgroups (partial push))))
       )))

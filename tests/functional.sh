@@ -98,3 +98,5 @@ REPOS_CONFIG=/tmp/repos-test/config.yaml $__DIR__/../repos pull -vv
 REPOS_CONFIG=/tmp/repos-test/config.yaml $__DIR__/../repos list -vv
 
 REPOS_CONFIG=/tmp/repos-test/config.yaml $__DIR__/../repos search master-r2-content -vv
+
+REPOS_CONFIG=/tmp/repos-test/config.yaml $__DIR__/../repos sync -vv

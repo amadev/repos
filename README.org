@@ -1,15 +1,15 @@
-repos
-=====
+* repos
 
-Basic operations
-----------------
+** Basic operations
 
 `repos` is a CLI tool that helps to manage multiple git repositories.
 
 Add some repositories with `repos add` command.
 
-  repos add https://review.opendev.org/openstack/nova
-  repos add https://review.opendev.org/openstack/cinder
+#+BEGIN_SRC sh
+repos add https://review.opendev.org/openstack/nova
+repos add https://review.opendev.org/openstack/cinder
+#+END_SRC
 
 Repository names must be unique. By default the last segment of
 repository path used as a name, so conflict could happen.
@@ -17,43 +17,46 @@ To overcome, use the `--name` option.
 
 The following basic operations are available.
 
-  repos list
-  repos pull
+#+BEGIN_SRC sh
+repos list
+repos pull
+#+END_SRC
 
 Repositories could be organized hierarchically into groups and
 operations can be issued on a particular group only. The most useful
 way of using groups is a `search` operation that helps to search on
 multiples repositories not depending on a path they were cloned.
 
-  repos search --group qemu needle -- --ignore tests
+#+BEGIN_SRC sh
+repos search --group qemu needle -- --ignore tests
+#+END_SRC
 
 The search backend could be changed with a 'search_command` config option.
 
-repos sync
-----------
+** `repos sync`
 
 A `repos sync` command pulls and pushes repositories to make sure
 everything is synchronized. As a pure man dropbox alternative, you can
-mark your repo with `auto-commit` tag like `repos add <repo> --tags
+mark your repo with `auto-commit` tag like `repos set <repo> --tags
 auto-commit` and `repos sync` will auto-commit changes in the
 repository, pull changes from upstream and push resulting set to
 upstream. Surely this may be applied to a specific group only.
 
-Group hierarchy
----------------
+** Group hierarchy
 
 With `--group` and `--parent` options, repositories can be easily
 organized into a hierarchy.
 
-  repos add --group group-1
-  repos add repo-1 --group group-1
-  repos add --group group-1.1 --parent group-1
-  repos add repo-1.1 --group group-1.1
+#+BEGIN_SRC sh
+repos add-group group-1
+repos add repo-1 --group group-1
+repos add-group group-1.1 --parent group-1
+repos add repo-1.1 --group group-1.1
+#+END_SRC
 
 Group names must be unique. Be careful with circular dependencies.
 
-Config options
---------------
+** Config options
 
 Config by default resided in $HOME/.repos/conf.yaml.
 
@@ -65,16 +68,14 @@ Config by default resided in $HOME/.repos/conf.yaml.
   will be cloned here;
 - log - path to a log file.
 
-Repository tags
----------------
+** Repository tags
 
 - auto-commit - for `repos sync` command it will stage all changes and
   commit them;
 - shallow - quick clone for big repositories pushing is not planned
   from.
 
-Gerrit repositories download
-----------------------------
+** Gerrit repositories download
 
 `repos gerrit <url>` generates a script with `repos` commands to download
 all gerrit projects hierarchy.

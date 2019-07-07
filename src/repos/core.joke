@@ -251,7 +251,7 @@
 (defn get-subgroups
   [group groups]
   (loop [subgroups (set [group])
-         result #{}]
+         result (set [group])]
     (let [subgroups (set (map #(:name %) (filter #(subgroups (:parent %)) groups)))]
       (if (empty? subgroups)
         result
@@ -292,6 +292,7 @@
           subgroups (get-subgroups (:group options) (:groups db))]
       (debug "db-path" db-path)
       (debug "current-group" current-group)
+      (debug "subgroups" subgroups)
       ;; to allow group conf update via DB file it's issued everytime
       ;; group tree in file system corresponds to config always
       ;; some link to repo may be broken due to repo is not pulled yet

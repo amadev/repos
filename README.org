@@ -1,5 +1,11 @@
 * repos
 
+** Installation
+
+#+BEGIN_SRC sh
+git clone https://github.com/amadev/repos.git && cd repos && sudo ./install.sh
+#+END_SRC
+
 ** Basic operations
 
 `repos` is a CLI tool that helps to manage multiple git repositories.

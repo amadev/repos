@@ -188,7 +188,7 @@
   ([url] (repo url {}))
   ([url options]
    (let [name (or (:name options) (joker.filepath/base url))
-         path (or (:path options) (expand-env (format "$HOME/src/%s" name)))]
+         path (or (:path options) (str/join "" [(or (:default_dir *context*) (expand-env "$HOME/src/")) name]))]
     (info "add a repo" name "to" path)
     {:name name
      :path path
@@ -283,6 +283,15 @@
          (when-not (str/index-of (:cause (ex-data e)) "nothing to commit")
            (throw (ex-info (ex-message e) (ex-data e)))))))))
 
+(defn gerrit
+  [url clone-url]
+  (let [projects (joker.json/read-string
+                  (apply str (rest (str/split-lines (:body (joker.http/send
+                                                            {:url (str/join "" [url "projects/"])}))))))]
+    (println (write-yaml {:repos (into [] (for [project projects]
+                                            (repo (str/join "" [clone-url (first project)]))))
+                          :groups [{:name "root"}]}))))
+
 (defn main
   [args options]
   (binding [*context* {:log_level (get (vec (reverse *levels*)) (:verbose options) :debug)
@@ -294,22 +303,24 @@
           groups-dir (:groups config)
           current-group (filepath/join groups-dir (str (get-group-path (:group options) (:groups db))))
           subgroups (set (filter some? (concat [(:group options)] (get-subgroups (:group options) (:groups db)))))]
-      (debug "db-path" db-path)
-      (debug "current-group" current-group)
-      (debug "subgroups" subgroups)
-      ;; to allow group conf update via DB file it's issued everytime
-      ;; group tree in file system corresponds to config always
-      ;; some link to repo may be broken due to repo is not pulled yet
-      ;; groups withot repo in it will not be created
-      (put-repos-into-groups (:repos db) (:groups db) groups-dir)
-      (case (first args)
-        "pull" (do-repos (:repos db) subgroups (partial pull))
-        ;; todo: check agrs number for each action
-        "add" (add-repo db db-path (second args) options)
-        "list" (repo-list current-group)
-        "search" (search (:search_command config) (second args) current-group (:rest-args options))
-        "sync" (do
-                 (do-repos (:repos db) subgroups (partial auto-commit))
-                 (do-repos (:repos db) subgroups (partial pull))
-                 (do-repos (:repos db) subgroups (partial push))))
+      (binding [*context* (assoc *context* :default_dir (:repos_default_directory config))]
+        (debug "db-path" db-path)
+        (debug "current-group" current-group)
+        (debug "subgroups" subgroups)
+        ;; to allow group conf update via DB file it's issued everytime
+        ;; group tree in file system corresponds to config always
+        ;; some link to repo may be broken due to repo is not pulled yet
+        ;; groups withot repo in it will not be created
+        (put-repos-into-groups (:repos db) (:groups db) groups-dir)
+        (case (first args)
+          "pull" (do-repos (:repos db) subgroups (partial pull))
+          ;; todo: check agrs number for each action
+          "add" (add-repo db db-path (second args) options)
+          "list" (repo-list current-group)
+          "search" (search (:search_command config) (second args) current-group (:rest-args options))
+          "sync" (do
+                   (do-repos (:repos db) subgroups (partial auto-commit))
+                   (do-repos (:repos db) subgroups (partial pull))
+                   (do-repos (:repos db) subgroups (partial push)))
+          "gerrit" (gerrit (second args) (nth args 2))))
       )))

@@ -13,7 +13,8 @@
    ["add" "Add a new repo to DB"]
    ["list" "Show structure of repositories"]
    ["search" "Seacrh for text in group of repositories"]
-   ["sync" "Pull and then push repositories"]])
+   ["sync" "Pull and then push repositories"]
+   ["gerrit" "Generate db file for repos from Gerrit API"]])
 (def *opts*
   [["-v" "--verbose" :default 0 :update-fn inc]
    ["-h" "--help" "Show this summary"]

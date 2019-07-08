@@ -6,7 +6,7 @@
   (:require [joker.string :as str])
   (:require [joker.time :as time])
   (:require [joker.filepath :as filepath])
-  (:require [joker.set]))
+  (:require [joker.set :as jset]))
 
 (def *context* {})
 (def *levels* [:debug :info :error])
@@ -251,11 +251,11 @@
 (defn get-subgroups
   [group groups]
   (loop [subgroups (set [group])
-         result (set [group])]
+         result #{}]
     (let [subgroups (set (map #(:name %) (filter #(subgroups (:parent %)) groups)))]
       (if (empty? subgroups)
         result
-        (recur subgroups (joker.set/union result subgroups))))))
+        (recur subgroups (jset/union result subgroups))))))
 
 (defn push
   [repo]
@@ -293,7 +293,7 @@
           db (read-yaml db-path)
           groups-dir (:groups config)
           current-group (filepath/join groups-dir (str (get-group-path (:group options) (:groups db))))
-          subgroups (get-subgroups (:group options) (:groups db))]
+          subgroups (set (filter some? (concat [(:group options)] (get-subgroups (:group options) (:groups db)))))]
       (debug "db-path" db-path)
       (debug "current-group" current-group)
       (debug "subgroups" subgroups)

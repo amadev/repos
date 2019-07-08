@@ -63,18 +63,19 @@
   [s]
   ;; the func would be much easier if str/replace could suport repl arg as func
   ;; todo: joker issue
-  (loop [replaces (map #(list %1 (get (:env *context*) (apply str (rest %1)) "")) (re-seq #"\$[A-Z0-9_]+" s))
-         s s]
-    (if (empty? replaces)
-      s
-      (let [pair (first replaces)
-            from (first pair)
-            to (second pair)]
-        (recur (rest replaces) (str/replace s from to))))))
+  (let [s (str s)]
+   (loop [replaces (map #(list %1 (get (:env *context*) (apply str (rest %1)) "")) (re-seq #"\$[A-Z0-9_]+" s))
+          s s]
+     (if (empty? replaces)
+       s
+       (let [pair (first replaces)
+             from (first pair)
+             to (second pair)]
+         (recur (rest replaces) (str/replace s from to)))))))
 
 (defn process-yaml-value
   [v p]
-  (if (str/ends-with? p "tags.[]")
+  (if (str/ends-with? (str p) "tags.[]")
     (keyword v)
     (expand-env v)))
 

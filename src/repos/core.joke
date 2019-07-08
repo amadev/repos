@@ -194,7 +194,7 @@
      :path path
      ;; todo: get default group from context
      :group (or (:group options) "root")
-     :tags []
+     :tags (or (:tags options) [])
      :remotes [{:name "origin"
                 :url url}]
      :branches [{:name "master"
@@ -285,12 +285,19 @@
 
 (defn gerrit
   [url clone-url]
-  (let [projects (joker.json/read-string
-                  (apply str (rest (str/split-lines (:body (joker.http/send
-                                                            {:url (str/join "" [url "projects/"])}))))))]
-    (println (write-yaml {:repos (into [] (for [project projects]
-                                            (repo (str/join "" [clone-url (first project)]))))
-                          :groups [{:name "root"}]}))))
+  (let [response (:body (joker.http/send {:url (str/join "" [url "projects/"])}))
+        but-first-response (apply str (rest (str/split-lines response)))
+        projects (joker.json/read-string but-first-response)]
+    (println
+     (write-yaml
+      {:repos
+       (into
+        []
+        (for [project projects]
+          (let [url (str/join "" [clone-url (first project)])
+                name (str/replace (first project) "/" "-")]
+            (repo url {:tags [:shallow] :name name}))))
+       :groups [{:name "root"}]}))))
 
 (defn main
   [args options]

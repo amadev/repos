@@ -85,6 +85,9 @@
 
 (defn read-yaml
   [path]
+  (when-not path
+    (throw (ex-info "Trying read yaml from empty path"
+                    {:cause "Most likely it's empty config file with no DB specified"})))
   (let [data (yaml/read-string (slurp path))]
     (walk data keyword process-yaml-value)))
 

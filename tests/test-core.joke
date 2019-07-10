@@ -47,4 +47,6 @@
     (is (= #{"g4"} (core/get-subgroups "g3" groups)))
     (is (= #{} (core/get-subgroups "g10" groups)))))
 
-(run-tests 'tests.test-core)
+(let [results (run-tests)]
+  (when (or (< 0 (:fail results)) (< 0 (:error results)))
+    (joker.os/exit -1)))

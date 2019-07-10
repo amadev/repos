@@ -287,9 +287,27 @@
          (when-not (str/index-of (:cause (ex-data e)) "nothing to commit")
            (throw (ex-info (ex-message e) (ex-data e)))))))))
 
+(defn request
+  [url & [params]]
+  (debug "query" url)
+  (let [response (joker.http/send (merge {:url url} params))]
+    (debug "response" (if (< 400 (count (:body response)))
+                        (assoc response :body (apply str (take 400 (:body response))))
+                        response))
+    (if (<= 400 (:status response))
+      (throw (ex-info "http query got response status code greater or equal than 400"
+                      {:cause (:body response)})))
+    response)
+  )
+
+(defn parse-headers
+  [headers]
+  (when headers
+   (into {} (map #(str/split % #":") (str/split-lines headers)))))
+
 (defn gerrit
-  [url clone-url]
-  (let [response (:body (joker.http/send {:url (str/join "" [url "projects/"])}))
+  [url clone-url headers]
+  (let [response (:body (request (str/join "" [url "projects/"]) {:headers headers}))
         but-first-response (apply str (rest (str/split-lines response)))
         projects (joker.json/read-string but-first-response)]
     (println
@@ -333,5 +351,5 @@
                    (do-repos (:repos db) subgroups (partial auto-commit))
                    (do-repos (:repos db) subgroups (partial pull))
                    (do-repos (:repos db) subgroups (partial push)))
-          "gerrit" (gerrit (second args) (nth args 2))))
+          "gerrit" (gerrit (second args) (nth args 2) (parse-headers (:headers options)))))
       )))

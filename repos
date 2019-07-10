@@ -19,7 +19,8 @@
   [["-v" "--verbose" :default 0 :update-fn inc]
    ["-h" "--help" "Show this summary"]
    ["-p" "--path" "New repository clone path" :required true]
-   ["-g" "--group" "Group name allows to filter repository list" :required true]])
+   ["-g" "--group" "Group name allows to filter repository list" :required true]
+   [nil "--headers" "Additional headers for the gerrit command if authentication required" :required true]])
 
 (defn usage
   [summary errors]

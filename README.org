@@ -107,8 +107,8 @@ headers could be provided.
 #+BEGIN_SRC sh
 repos gerrit \
   https://gerrit.mcp.mirantis.com/ \
-  ssh://avolkov@gerrit.mcp.mirantis.com:29418/ --headers \
-  "Cookie: visid_incap_289710=bkSPFjIsSoivi1T5WGxZx7S99FwAAAAAQUIPAAAAAAAC+z2z9FhtSxlKr4Zh7DrZ; visid_incap_1179781=PnOmqhetRtiAGZDdmWNgMQHREV0AAAAAQUIPAAAAAAAE70sKWyyjmlWCqwyMWV1W; visid_incap_197747=ukFb44dKReqpXY1VYxSRgwPREV0AAAAAQUIPAAAAAADmRAxHh5uMD+DLvpJFgMCe; __zlcmid=syiL17GNFH7CKM; visid_incap_917608=peRpb9tFT7myJCM49MECpWqEFF0AAAAAQUIPAAAAAAABLsueIT2puZFVvr/bNO7S; GerritAccount=aOWcfnNgmwL8C52xzGktMSstUsjmkeT0; XSRF_TOKEN=aOWcfdj9xMdDQC0y1OOaIHbbwMpBi7vc" \
+  ssh://$USER@gerrit.mcp.mirantis.com:29418/ --headers \
+  "Cookie: <cookie-value-here>" \
   > $HOME/.repos/mcp-db.yaml
 #+END_SRC
 

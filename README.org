@@ -43,7 +43,7 @@ The search backend could be changed with a 'search_command` config option.
 
 A `repos sync` command pulls and pushes repositories to make sure
 everything is synchronized. As a pure man dropbox alternative, you can
-mark your repo with `auto-commit` tag like `repos set <repo> --tags
+mark your repo with `auto-commit` tag like `repos add ... --tags
 auto-commit` and `repos sync` will auto-commit changes in the
 repository, pull changes from upstream and push resulting set to
 upstream. Surely this may be applied to a specific group only.

@@ -223,6 +223,9 @@
 
 (defn put-repos-into-groups
   [repos groups dir]
+  ;; rm -r can definetely be dangerous, let's make sure there are no files in groups dir
+  (when (and (dir? dir) (empty? (:out (ex "find" dir "-type" "f"))))
+    (ex "rm" "-r" dir))
   (doseq [r repos]
     (let [group-path (get-group-path (:group r) groups)]
       (when-not group-path
@@ -231,7 +234,6 @@
       (let [group-path-full (filepath/join dir group-path)
             repo-target-path (filepath/join group-path-full (:name r))]
         (ex "mkdir" "-p" group-path-full)
-        (ex "rm" "-f" repo-target-path)
         (ex "ln" "-s" (:path r) repo-target-path)))))
 
 (defn repo-list

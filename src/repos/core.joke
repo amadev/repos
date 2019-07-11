@@ -170,6 +170,19 @@
                 (when-not (str/index-of (:cause (ex-data e)) "already exists")
                   (throw (ex-info (ex-message e) (ex-data e)))))))))
 
+(defn update-config
+  [repo]
+  (in-dir
+   (:path repo)
+   (doseq [c (:config repo)]
+     (try
+       (ex "git" "config" "--unset-all" (:name c))
+       (catch Error e))
+     (let [values (if (sequential? (:value c)) (:value c) (list (:value c)))]
+       (doseq [v values]
+         (ex "git" "config" "--add" (:name c) v)))
+     )))
+
 (defn pull
   [repo]
   (if (not (dir? (:path repo)))
@@ -186,7 +199,8 @@
      (reload-branches repo)
      (doseq [b (:branches repo)]
        (ex "git" "checkout" (:name b))
-       (ex "git" "pull" "--rebase" (:remote b) (:refspec b))))))
+       (ex "git" "pull" "--rebase" (:remote b) (:refspec b)))))
+  (update-config repo))
 
 (defn repo
   ([url] (repo url {}))

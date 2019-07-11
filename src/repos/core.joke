@@ -206,18 +206,19 @@
   ([url] (repo url {}))
   ([url options]
    (let [name (or (:name options) (joker.filepath/base url))
-         path (or (:path options) (str/join "" [(or (:default_dir *context*) (expand-env "$HOME/src/")) name]))]
+         path (or (:path options) (str/join "" [(or (:default_dir *context*) (expand-env "$HOME/src/")) name]))
+         remotes [{:name "origin" :url url}]
+         remotes (if (:remotes options) (concat remotes (:remotes options)) remotes)
+         branches [{:name "master" :remote "origin" :refspec "master"}]
+         branches (if (:branches options) (concat branches (:branches options)) branches)]
     (info "add a repo" name "to" path)
     {:name name
      :path path
      ;; todo: get default group from context
      :group (or (:group options) "root")
      :tags (or (:tags options) [])
-     :remotes [{:name "origin"
-                :url url}]
-     :branches [{:name "master"
-                 :remote "origin"
-                 :refspec "master"}]})))
+     :remotes remotes
+     :branches branches})))
 
 (defn add-repo
   [db path url options]
@@ -316,11 +317,6 @@
     response)
   )
 
-(defn parse-headers
-  [headers]
-  (when headers
-   (into {} (map #(str/split % #":") (str/split-lines headers)))))
-
 (defn gerrit
   [url clone-url headers]
   (let [response (:body (request (str/join "" [url "projects/"]) {:headers headers}))
@@ -355,7 +351,7 @@
         ;; to allow group conf update via DB file it's issued everytime
         ;; group tree in file system corresponds to config always
         ;; some link to repo may be broken due to repo is not pulled yet
-        ;; groups withot repo in it will not be created
+        ;; groups without repos will not be created
         (put-repos-into-groups (:repos db) (:groups db) groups-dir)
         (case (first args)
           "pull" (do-repos (:repos db) subgroups (partial pull))
@@ -367,5 +363,5 @@
                    (do-repos (:repos db) subgroups (partial auto-commit))
                    (do-repos (:repos db) subgroups (partial pull))
                    (do-repos (:repos db) subgroups (partial push)))
-          "gerrit" (gerrit (second args) (nth args 2) (parse-headers (:headers options)))))
+          "gerrit" (gerrit (second args) (nth args 2) (:headers options))))
       )))

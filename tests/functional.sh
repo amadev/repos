@@ -89,7 +89,8 @@ groups:
     parent: root
 EOF
 
-REPOS_CONFIG=/tmp/repos-test/config.yaml $__DIR__/../repos add /tmp/repos-test/orig/r3 --path /tmp/repos-test/r3 -vv
+REPOS_CONFIG=/tmp/repos-test/config.yaml $__DIR__/../repos add /tmp/repos-test/orig/r3 \
+  --path /tmp/repos-test/r3 -t auto-commit --headers abc:def -vv --name super-r3
 
 REPOS_CONFIG=/tmp/repos-test/config.yaml $__DIR__/../repos pull -vv
 

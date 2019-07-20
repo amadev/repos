@@ -214,7 +214,6 @@
      (info "add a repo" name "to" path)
      {:name name
       :path path
-      ;; todo: get default group from context
       :group (or (:group options) (:default_group *context*) "root")
       :tags (or (:tags options) [])
       :remotes remotes
@@ -324,7 +323,7 @@
 
 (defn gerrit
   [url clone-url options]
-  (let [response (:body (request (str/join "" [url "projects/"]) {:headers options}))
+  (let [response (:body (request (str/join "" [url "projects/"]) {:headers (:headers options)}))
         but-first-response (apply str (rest (str/split-lines response)))
         projects (joker.json/read-string but-first-response)]
     (println
@@ -335,7 +334,7 @@
         (for [project projects]
           (let [url (str/join "" [clone-url (first project)])
                 name (str/replace (first project) "/" "-")]
-            (repo url {:tags [:shallow] :name name}))))
+            (repo url (merge {:tags [:shallow] :name name} options)))))
        :groups [{:name (or (:group options) (:default_group *context*) "root")}]}))))
 
 (defn add-group

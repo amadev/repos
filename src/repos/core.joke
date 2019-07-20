@@ -236,16 +236,21 @@
           (str/join "/" (reverse (conj result group)))
           (recur (group-dict group) (conj result group)))))))
 
+(defn get-group-path-ex
+  [group groups]
+  (let [group-path (get-group-path group groups)]
+      (when-not group-path
+        (throw (ex-info (format "Not found path for group %s" group)
+                        {:cause "Probably group hierarchy is defined incorrectly"})))
+      group-path))
+
 (defn put-repos-into-groups
   [repos groups dir]
   ;; rm -r can definetely be dangerous, let's make sure there are no files in groups dir
   (when (and (dir? dir) (empty? (:out (ex "find" dir "-type" "f"))))
     (ex "rm" "-r" dir))
   (doseq [r repos]
-    (let [group-path (get-group-path (:group r) groups)]
-      (when-not group-path
-        (throw (ex-info (format "Not found path for group %s" (:group r))
-                        {:cause "Probably group hierarchy is defined incorrectly"})))
+    (let [group-path (get-group-path-ex (:group r) groups)]
       (let [group-path-full (filepath/join dir group-path)
             repo-target-path (filepath/join group-path-full (:name r))]
         (ex "mkdir" "-p" group-path-full)
@@ -335,6 +340,7 @@
 
 (defn add-group
   [db db-path name options]
+  (get-group-path-ex (:parent options) (:groups db))
   (write-yaml
    (assoc db :groups (conj (:groups db) {:name name :parent (:parent options)}))
    db-path))
@@ -348,11 +354,11 @@
           db-path (:db config)
           db (read-yaml db-path)
           groups-dir (:groups config)
-          current-group (filepath/join groups-dir (str (get-group-path (:group options) (:groups db))))
+          current-group-path (filepath/join groups-dir (str (get-group-path (:group options) (:groups db))))
           subgroups (set (filter some? (concat [(:group options)] (get-subgroups (:group options) (:groups db)))))]
       (binding [*context* (assoc *context* :default_dir (:repos_default_directory config))]
         (debug "db-path" db-path)
-        (debug "current-group" current-group)
+        (debug "current-group-path" current-group-path)
         (debug "subgroups" subgroups)
         ;; to allow group conf update via DB file it's issued everytime
         ;; group tree in file system corresponds to config always
@@ -363,8 +369,8 @@
           "pull" (do-repos (:repos db) subgroups (partial pull))
           ;; todo: check agrs number for each action
           "add" (add-repo db db-path (second args) options)
-          "list" (repo-list current-group)
-          "search" (search (:search_command config) (second args) current-group (:rest-args options))
+          "list" (repo-list current-group-path)
+          "search" (search (:search_command config) (second args) current-group-path (:rest-args options))
           "sync" (do
                    (do-repos (:repos db) subgroups (partial auto-commit))
                    (do-repos (:repos db) subgroups (partial pull))

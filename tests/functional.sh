@@ -115,8 +115,6 @@ repos_default_directory: $HOME/src/
 log: /var/log/repos/repos.log
 EOF
 
-touch /tmp/repos-test/db1.yaml
-
 REPOS_CONFIG=/tmp/repos-test/config1.yaml $__DIR__/../repos add-group g1 -vv
 
 REPOS_CONFIG=/tmp/repos-test/config1.yaml $__DIR__/../repos add-group g2 -vv

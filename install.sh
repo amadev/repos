@@ -19,14 +19,10 @@ log: /var/log/repos/repos.log
 EOF
 fi
 
-if [ ! -f "$HOME/.repos/db.yaml" ]; then
-  touch "$HOME/.repos/db.yaml"
-fi
-
 u=$(logname)
 chown -R $u:$u "$HOME/.repos/"
 
-wget -q https://github.com/candid82/joker/releases/download/v0.12.4/joker-0.12.4-linux-amd64.zip -O /tmp/joker.zip
+wget -q https://github.com/candid82/joker/releases/download/v0.12.5/joker-0.12.5-linux-amd64.zip -O /tmp/joker.zip
 cd /tmp
 unzip joker.zip
 mv joker /usr/local/bin/joker

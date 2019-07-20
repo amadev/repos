@@ -349,12 +349,24 @@
   []
   {:repos [] :groups [{:name "root"}]})
 
+(defn validate-config
+  [config]
+  (let [required #{:db :groups :search_command :repos_default_directory}]
+    (when-not (jset/subset? required (set (keys config)))
+      (throw (ex-info "Invalid configuration"
+                      {:cause (format "No required keys (%s) in config file" required)}))
+      )
+    (when-not (os/exists? (:db config))
+      (ex "mkdir" "-p" (filepath/dir (:db config)))
+      (ex "touch" (:db config)))
+    config))
+
 (defn main
   [args options]
   (binding [*context* {:log_level (get (vec (reverse *levels*)) (:verbose options) :debug)
                        :env (os/env)}]
     (let [config-path (expand-env (get (:env *context*) "REPOS_CONFIG" "$HOME/.repos/config.yaml"))
-          config (read-yaml config-path)
+          config (-> config-path read-yaml validate-config)
           db-path (:db config)
           db (read-yaml db-path)
           db (if (empty? db) (init-db) db)

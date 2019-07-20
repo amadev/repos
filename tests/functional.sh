@@ -101,3 +101,5 @@ REPOS_CONFIG=/tmp/repos-test/config.yaml $__DIR__/../repos list -vv
 REPOS_CONFIG=/tmp/repos-test/config.yaml $__DIR__/../repos search master-r2-content -vv
 
 REPOS_CONFIG=/tmp/repos-test/config.yaml $__DIR__/../repos sync -vv
+
+REPOS_CONFIG=/tmp/repos-test/config.yaml $__DIR__/../repos add-group my-group --parent root -vv

@@ -64,14 +64,14 @@
   ;; the func would be much easier if str/replace could suport repl arg as func
   ;; todo: joker issue
   (let [s (str s)]
-   (loop [replaces (map #(list %1 (get (:env *context*) (apply str (rest %1)) "")) (re-seq #"\$[A-Z0-9_]+" s))
-          s s]
-     (if (empty? replaces)
-       s
-       (let [pair (first replaces)
-             from (first pair)
-             to (second pair)]
-         (recur (rest replaces) (str/replace s from to)))))))
+    (loop [replaces (map #(list %1 (get (:env *context*) (apply str (rest %1)) "")) (re-seq #"\$[A-Z0-9_]+" s))
+           s s]
+      (if (empty? replaces)
+        s
+        (let [pair (first replaces)
+              from (first pair)
+              to (second pair)]
+          (recur (rest replaces) (str/replace s from to)))))))
 
 (defn process-yaml-value
   [v p]
@@ -99,22 +99,22 @@
   ;; todo: recur
   [data & [level]]
   (let [level (or level 0)]
-   (cond
-     (or (vector? data) (list? data))
-     (doseq [v data]
-       (if (or (map? v) (vector? v) (list? v))
-         (do
-           (printf "%s-\n" (indent level))
-           (serialize v (inc level)))
-         (printf "%s- %s\n" (indent level) v)))
-     (map? data)
-     (doseq [[k v] data]
-       (if (and (not (empty? v)) (or (map? v) (vector? v) (list? v)))
-         (do
-           (printf "%s%s:\n" (indent level) k)
-           (serialize v (inc level)))
-         (printf "%s%s: %s\n" (indent level) k (str v))))
-     :else (printf "%s%s\n" (indent level) data))))
+    (cond
+      (or (vector? data) (list? data))
+      (doseq [v data]
+        (if (or (map? v) (vector? v) (list? v))
+          (do
+            (printf "%s-\n" (indent level))
+            (serialize v (inc level)))
+          (printf "%s- %s\n" (indent level) v)))
+      (map? data)
+      (doseq [[k v] data]
+        (if (and (not (empty? v)) (or (map? v) (vector? v) (list? v)))
+          (do
+            (printf "%s%s:\n" (indent level) k)
+            (serialize v (inc level)))
+          (printf "%s%s: %s\n" (indent level) k (str v))))
+      :else (printf "%s%s\n" (indent level) data))))
 
 (defn write-yaml
   [data & [path]]
@@ -211,20 +211,20 @@
          remotes (if (:remotes options) (concat remotes (:remotes options)) remotes)
          branches [{:name "master" :remote "origin" :refspec "master"}]
          branches (if (:branches options) (concat branches (:branches options)) branches)]
-    (info "add a repo" name "to" path)
-    {:name name
-     :path path
-     ;; todo: get default group from context
-     :group (or (:group options) "root")
-     :tags (or (:tags options) [])
-     :remotes remotes
-     :branches branches})))
+     (info "add a repo" name "to" path)
+     {:name name
+      :path path
+      ;; todo: get default group from context
+      :group (or (:group options) "root")
+      :tags (or (:tags options) [])
+      :remotes remotes
+      :branches branches})))
 
 (defn add-repo
-  [db path url options]
+  [db db-path url options]
   (write-yaml
    (assoc db :repos (conj (:repos db) (repo url options)))
-   path))
+   db-path))
 
 (defn get-group-path
   [group groups]
@@ -333,6 +333,12 @@
             (repo url {:tags [:shallow] :name name}))))
        :groups [{:name "root"}]}))))
 
+(defn add-group
+  [db db-path name options]
+  (write-yaml
+   (assoc db :groups (conj (:groups db) {:name name :parent (:parent options)}))
+   db-path))
+
 (defn main
   [args options]
   (binding [*context* {:log_level (get (vec (reverse *levels*)) (:verbose options) :debug)
@@ -363,5 +369,6 @@
                    (do-repos (:repos db) subgroups (partial auto-commit))
                    (do-repos (:repos db) subgroups (partial pull))
                    (do-repos (:repos db) subgroups (partial push)))
-          "gerrit" (gerrit (second args) (nth args 2) (:headers options))))
+          "gerrit" (gerrit (second args) (nth args 2) (:headers options))
+          "add-group" (add-group db db-path (second args) options)))
       )))

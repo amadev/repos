@@ -27,7 +27,8 @@
    ["list" "Show structure of repositories"]
    ["search" "Seacrh for text in group of repositories"]
    ["sync" "Pull and then push repositories"]
-   ["gerrit" "Generate db file for repos from Gerrit API"]])
+   ["gerrit" "Generate db file for repos from Gerrit API"]
+   ["add-group" "Add a new repository group"]])
 (def *opts*
   [["-v" "--verbose" :default 0 :update-fn inc]
    ["-h" "--help" "Show this summary"]
@@ -36,7 +37,8 @@
    [nil "--headers" "Additional headers for the gerrit command if authentication required"
     :required true :parse-fn parse-headers]
    ["-n" "--name" "Repository name" :required true]
-   ["-t" "--tags" "Repository tag" :required true :parse-fn parse-tags]])
+   ["-t" "--tags" "Repository tag" :required true :parse-fn parse-tags]
+   [nil "--parent" "Parent group name" :required true]])
 
 (defn usage
   [summary errors]

@@ -20,11 +20,7 @@ EOF
 fi
 
 if [ ! -f "$HOME/.repos/db.yaml" ]; then
-cat << 'EOF' > ~/.repos/db.yaml
-repos: []
-groups:
-  - name: root
-EOF
+  touch "$HOME/.repos/db.yaml"
 fi
 
 u=$(logname)

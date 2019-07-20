@@ -103,3 +103,26 @@ REPOS_CONFIG=/tmp/repos-test/config.yaml $__DIR__/../repos search master-r2-cont
 REPOS_CONFIG=/tmp/repos-test/config.yaml $__DIR__/../repos sync -vv
 
 REPOS_CONFIG=/tmp/repos-test/config.yaml $__DIR__/../repos add-group my-group --parent root -vv
+
+
+# test empty db
+
+cat << 'EOF' > /tmp/repos-test/config1.yaml
+db: /tmp/repos-test/db1.yaml
+groups: /tmp/repos-test/groups1/
+search_command: grep -HRin
+repos_default_directory: $HOME/src/
+log: /var/log/repos/repos.log
+EOF
+
+touch /tmp/repos-test/db1.yaml
+
+REPOS_CONFIG=/tmp/repos-test/config1.yaml $__DIR__/../repos add-group g1 -vv
+
+REPOS_CONFIG=/tmp/repos-test/config1.yaml $__DIR__/../repos add-group g2 -vv
+
+REPOS_CONFIG=/tmp/repos-test/config1.yaml $__DIR__/../repos add-group g1.1 --parent g1 -vv
+
+REPOS_CONFIG=/tmp/repos-test/config1.yaml $__DIR__/../repos add-group g2.1 --parent g2 -vv
+
+REPOS_CONFIG=/tmp/repos-test/config1.yaml $__DIR__/../repos add /tmp/repos-test/orig/r3 -vv

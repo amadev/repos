@@ -215,7 +215,7 @@
      {:name name
       :path path
       ;; todo: get default group from context
-      :group (or (:group options) "root")
+      :group (or (:group options) (:default_group *context*) "root")
       :tags (or (:tags options) [])
       :remotes remotes
       :branches branches})))
@@ -323,8 +323,8 @@
   )
 
 (defn gerrit
-  [url clone-url headers]
-  (let [response (:body (request (str/join "" [url "projects/"]) {:headers headers}))
+  [url clone-url options]
+  (let [response (:body (request (str/join "" [url "projects/"]) {:headers options}))
         but-first-response (apply str (rest (str/split-lines response)))
         projects (joker.json/read-string but-first-response)]
     (println
@@ -336,14 +336,18 @@
           (let [url (str/join "" [clone-url (first project)])
                 name (str/replace (first project) "/" "-")]
             (repo url {:tags [:shallow] :name name}))))
-       :groups [{:name "root"}]}))))
+       :groups [{:name (or (:group options) (:default_group *context*) "root")}]}))))
 
 (defn add-group
-  [db db-path name options]
-  (get-group-path-ex (:parent options) (:groups db))
+  [db db-path name parent]
+  (get-group-path-ex parent (:groups db))
   (write-yaml
-   (assoc db :groups (conj (:groups db) {:name name :parent (:parent options)}))
+   (assoc db :groups (conj (:groups db) {:name name :parent parent}))
    db-path))
+
+(defn init-db
+  []
+  {:repos [] :groups [{:name "root"}]})
 
 (defn main
   [args options]
@@ -353,12 +357,20 @@
           config (read-yaml config-path)
           db-path (:db config)
           db (read-yaml db-path)
+          db (if (empty? db) (init-db) db)
+          default-group (or (-> db :groups first :name)
+                            (throw (ex-info "Cannot find default group"
+                                            {:cause "Check DB has default group"})))
           groups-dir (:groups config)
           current-group-path (filepath/join groups-dir (str (get-group-path (:group options) (:groups db))))
           subgroups (set (filter some? (concat [(:group options)] (get-subgroups (:group options) (:groups db)))))]
-      (binding [*context* (assoc *context* :default_dir (:repos_default_directory config))]
+      (binding [*context* (->
+                           *context*
+                           (assoc-in [:default_dir] (:repos_default_directory config))
+                           (assoc-in [:default_group] default-group))]
         (debug "db-path" db-path)
         (debug "current-group-path" current-group-path)
+        (debug "default-group" default-group)
         (debug "subgroups" subgroups)
         ;; to allow group conf update via DB file it's issued everytime
         ;; group tree in file system corresponds to config always
@@ -375,6 +387,6 @@
                    (do-repos (:repos db) subgroups (partial auto-commit))
                    (do-repos (:repos db) subgroups (partial pull))
                    (do-repos (:repos db) subgroups (partial push)))
-          "gerrit" (gerrit (second args) (nth args 2) (:headers options))
-          "add-group" (add-group db db-path (second args) options)))
+          "gerrit" (gerrit (second args) (nth args 2) options)
+          "add-group" (add-group db db-path (second args) (or (:parent options) default-group))))
       )))

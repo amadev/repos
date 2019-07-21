@@ -22,13 +22,14 @@
 (def *program* "repos")
 (def *version* [0 1 0])
 (def *actions*
-  [["pull" "Clone or update all specified repositories"]
-   ["add" "Add a new repo to DB"]
+  [["add" "Add a new repository to DB"]
+   ["add-group" "Add a new repository group to DB"]
    ["list" "Show structure of repositories"]
-   ["search" "Seacrh for text in group of repositories"]
+   ["pull" "Clone or update all specified repositories"]
+   ["search" "Seacrh for text in a group of repositories"]
    ["sync" "Pull and then push repositories"]
    ["gerrit" "Generate db file for repos from Gerrit API"]
-   ["add-group" "Add a new repository group"]])
+   ])
 (def *opts*
   [["-v" "--verbose" :default 0 :update-fn inc]
    ["-h" "--help" "Show this summary"]

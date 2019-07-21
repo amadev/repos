@@ -53,23 +53,29 @@
     (println "\nErrors:")
     (run! println errors)))
 
-(let [[args _ rest-args] (partition-by #(= % "--") *command-line-args*)
-      {:keys [options arguments summary errors]} (cli/parse-opts args *opts*)
-      options (assoc options :rest-args rest-args)
-      {:keys [verbose help]} options]
-  (when (<= 2 verbose)
-    (println "parsed args, options:" arguments options))
+(defn parse-opts
+  [args]
+  (let [[args-no-rest _ rest-args] (partition-by #(= % "--") args)
+        parsed (cli/parse-opts args-no-rest *opts*)
+        args-ok? ((set (map first *actions*)) (first (:arguments parsed)))
+        parsed (assoc
+                parsed
+                :errors (if args-ok?
+                          (:errors parsed)
+                          (conj (:errors parsed) "Must specify one available action")))
+        parsed (assoc-in parsed [:options :rest-args] rest-args)]
+    (when (<= 2 (-> parsed :options :verbose))
+      (println "parsed" (dissoc parsed :summary)))
+    parsed))
+
+(let [{:keys [options arguments summary errors]} (parse-opts *command-line-args*)]
   (cond
-    errors
+    (or errors (:help options))
     (do
       (usage summary errors)
-      (os/exit -1))
-
-    help
-    (usage summary nil)
-
-    (and (not (empty? arguments))
-         ((set (map first *actions*)) (first arguments)))
+      (when errors
+        (os/exit -1)))
+    :else
     (try
       (r/main arguments options)
       (catch Error e
@@ -78,9 +84,4 @@
                   (ex-message e)
                   (:cause (ex-data e)))
           (printf "Error: %s\n" e))
-        (os/exit 1)))
-
-    :else
-    (do
-      (usage summary ["Must specify one available action"])
-      (os/exit -1))))
+        (os/exit 1)))))

@@ -47,6 +47,20 @@
     (is (= #{"g4"} (core/get-subgroups "g3" groups)))
     (is (= #{} (core/get-subgroups "g10" groups)))))
 
+(deftest test-serialize
+  (testing "Process simple value"
+    (is (= "\n" (core/serialize nil)))
+    (is (= "abc\n" (core/serialize "abc")))
+    (is (= "123\n" (core/serialize 123)))
+    (is (= "1.230000\n" (core/serialize 1.23)))
+    (is (= "a\n" (core/serialize \a)))
+    (is (= ":abc\n" (core/serialize :abc)))
+    (is (= "abc\n" (core/serialize 'abc))))
+  (testing "Process complex value"
+    (is (= "- 1\n- 2\n- 3\n" (core/serialize [1 2 3])))
+    (is (= "1: 2\n3: 4\n" (core/serialize {1 2 3 4})))
+    (is (= "1:\n  - 2\n  - 3\n4:\n  5: 6\n" (core/serialize {1 [2 3] 4 {5 6}})))))
+
 (let [results (run-tests)]
   (when (or (< 0 (:fail results)) (< 0 (:error results)))
     (joker.os/exit -1)))

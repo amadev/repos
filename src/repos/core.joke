@@ -95,9 +95,9 @@
   [n]
   (apply str (take (* n 2) (repeat " "))))
 
-(defn serialize
+(defn serialize-aux
   ;; todo: recur
-  [data & [level]]
+  [data level]
   (let [level (or level 0)]
     (cond
       (or (vector? data) (list? data))
@@ -105,21 +105,25 @@
         (if (or (map? v) (vector? v) (list? v))
           (do
             (printf "%s-\n" (indent level))
-            (serialize v (inc level)))
-          (printf "%s- %s\n" (indent level) v)))
+            (serialize-aux v (inc level)))
+          (printf "%s- %s\n" (indent level) (str v))))
       (map? data)
       (doseq [[k v] data]
-        (if (and (not (empty? v)) (or (map? v) (vector? v) (list? v)))
+        (if (and (or (map? v) (vector? v) (list? v)) (not (empty? v)))
           (do
-            (printf "%s%s:\n" (indent level) k)
-            (serialize v (inc level)))
-          (printf "%s%s: %s\n" (indent level) k (str v))))
-      :else (printf "%s%s\n" (indent level) data))))
+            (printf "%s%s:\n" (indent level) (str k))
+            (serialize-aux v (inc level)))
+          (printf "%s%s: %s\n" (indent level) (str k) (str v))))
+      :else (printf "%s%s\n" (indent level) (str data)))))
+
+(defn serialize
+  [data]
+  (with-out-str (serialize-aux data 0)))
 
 (defn write-yaml
   [data & [path]]
   (let [data (walk data name prepare-value-for-yaml)
-        s (with-out-str (serialize data))]
+        s (serialize data)]
     (if path (spit path s) s)))
 
 ;; === logs ===

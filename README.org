@@ -81,6 +81,33 @@ Config by default resided in $HOME/.repos/conf.yaml.
 - shallow - quick clone for big repositories pushing is not planned
   from.
 
+** Advanced usage
+
+Besides CLI commands, there is a way to edit DB directly.
+Especially as DB is a simple YAML file.
+
+Just after installation, a DB file can be found in
+$HOME/.repos/db.yaml. The actual path can be modified via config DB
+property (See Config options).
+
+Basically, it has two entities:
+
+Group:
+- name
+- parent
+
+Repo:
+- name - the name of a repository
+- path - absolute path in FS where a repository resided
+- tags - special properties of a repository (see Repository tags)
+- group - group name, that must be defined in Group entity
+- remotes - a list of git remotes (not available via CLI)
+- branches - a list of branches (not available via CLI)
+- config - a list of git config keys and values (not available via
+  CLI)
+
+An example of DB can be seen in file:tests/fixtures/db.yaml
+
 ** Gerrit repositories download
 
 `repos gerrit <url>` generates a database file can be used later with `repos` commands to download

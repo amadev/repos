@@ -187,24 +187,35 @@
          (ex "git" "config" "--add" (:name c) v)))
      )))
 
-(defn pull
+(defn pull-aux
   [repo]
   (if (not (dir? (:path repo)))
     ;; clone
-    (ex "git" "clone"
-        (if (some #(= % :shallow) (:tags repo)) "--depth=1" "")
-        (format "--origin=%s" (-> repo :remotes first :name))
-        (format "--branch=%s" (-> repo :branches first :name))
-        (-> repo :remotes first :url)
-        (:path repo))
+    (do
+      (info "clone" (:name repo))
+      (ex "git" "clone"
+          (if (some #(= % :shallow) (:tags repo)) "--depth=1" "")
+          (format "--origin=%s" (-> repo :remotes first :name))
+          (format "--branch=%s" (-> repo :branches first :name))
+          (-> repo :remotes first :url)
+          (:path repo)))
     ;; pull
     (in-dir
      (:path repo)
+     (info "pull" (:name repo))
      (reload-branches repo)
      (doseq [b (:branches repo)]
        (ex "git" "checkout" (:name b))
        (ex "git" "pull" "--rebase" (:remote b) (:refspec b)))))
   (update-config repo))
+
+(defn pull
+  [repo]
+  (try
+    (pull-aux repo)
+    (catch Error e
+      (when-not (str/index-of (:cause (ex-data e)) "Could not find remote branch master to clone")
+        (throw (ex-info (ex-message e) (ex-data e)))))))
 
 (defn repo
   ([url] (repo url {}))
@@ -249,6 +260,7 @@
 
 (defn put-repos-into-groups
   [repos groups dir]
+  (info "regenerate groups")
   ;; rm -r can definetely be dangerous, let's make sure there are no files in groups dir
   (when (and (dir? dir) (empty? (:out (ex "find" dir "-type" "f"))))
     (ex "rm" "-r" dir))

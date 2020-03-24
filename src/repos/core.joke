@@ -295,9 +295,12 @@
      (ex "git" "push" (:remote b) (format "%s:%s" (:name b) (:refspec b))))))
 
 (defn do-repos
-  [repos subgroups func]
+  [repos subgroups name func]
   (doseq [r (if (not (empty? subgroups)) (filter #(subgroups (:group %)) repos) repos)]
-    (func r)))
+    (if name
+      (if (= name (:name r))
+        (func r))
+      (func r))))
 
 (defn auto-commit
   [repo]
@@ -393,15 +396,15 @@
         ;; groups without repos will not be created
         (put-repos-into-groups (:repos db) (:groups db) groups-dir)
         (case (first args)
-          "pull" (do-repos (:repos db) subgroups (partial pull))
+          "pull" (do-repos (:repos db) subgroups (:name options) (partial pull))
           ;; todo: check agrs number for each action
           "add" (add-repo db db-path (second args) options)
           "list" (repo-list current-group-path)
           "search" (search (:search_command config) (second args) current-group-path (:rest-args options))
           "sync" (do
-                   (do-repos (:repos db) subgroups (partial auto-commit))
-                   (do-repos (:repos db) subgroups (partial pull))
-                   (do-repos (:repos db) subgroups (partial push)))
+                   (do-repos (:repos db) subgroups (:name options) (partial auto-commit))
+                   (do-repos (:repos db) subgroups (:name options) (partial pull))
+                   (do-repos (:repos db) subgroups (:name options) (partial push)))
           "gerrit" (gerrit (second args) (nth args 2) options)
           "add-group" (add-group db db-path (second args) (or (:parent options) default-group))))
       )))

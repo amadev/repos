@@ -134,8 +134,7 @@ headers could be provided.
 #+BEGIN_SRC sh
 repos gerrit \
   https://gerrit.mcp.mirantis.com/ \
-  ssh://$USER@gerrit.mcp.mirantis.com:29418/ --headers \
-  "Cookie: <cookie-value-here>" \
+  ssh://avolkov@gerrit.mcp.mirantis.com:29418/ --headers "$HEADERS" \
   > $HOME/.repos/mcp-db.yaml
 #+END_SRC
 

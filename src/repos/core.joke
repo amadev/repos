@@ -393,13 +393,15 @@
                                             {:cause "Check DB has default group"})))
           groups-dir (:groups config)
           current-group-path (filepath/join groups-dir (str (get-group-path (:group options) (:groups db))))
-          subgroups (set (filter some? (concat [(:group options)] (get-subgroups (:group options) (:groups db)))))]
+          subgroups (set (filter some? (concat [(:group options)] (get-subgroups (:group options) (:groups db)))))
+          current-repo-path (:path (first (filter #(= (:name %) (:name options)) (:repos db))))]
       (binding [*context* (->
                            *context*
                            (assoc-in [:default_dir] (:repos_default_directory config))
                            (assoc-in [:default_group] default-group))]
         (debug "db-path" db-path)
         (debug "current-group-path" current-group-path)
+        (debug "current-repo-path" current-repo-path)
         (debug "default-group" default-group)
         (debug "subgroups" subgroups)
         ;; to allow group conf update via DB file it's issued everytime
@@ -412,7 +414,11 @@
           ;; todo: check agrs number for each action
           "add" (add-repo db db-path (second args) options)
           "list" (repo-list current-group-path)
-          "search" (search (:search_command config) (second args) current-group-path (:rest-args options))
+          "search" (search
+                    (:search_command config)
+                    (second args)
+                    (or current-repo-path current-group-path)
+                    (:rest-args options))
           "sync" (do
                    (do-repos (:repos db) subgroups (:name options) (partial auto-commit))
                    (do-repos (:repos db) subgroups (:name options) (partial pull))

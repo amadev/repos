@@ -44,7 +44,7 @@
       (debug "result:" r)
       (when-not (:success r)
         (throw (ex-info "Exec failed"
-                        {:cause (str/join "\n" [(:out r) (:err r)])})))
+                        {:cause (str/trim (str/join "\n" [(:out r) (:err r)]))})))
       r
       )))
 

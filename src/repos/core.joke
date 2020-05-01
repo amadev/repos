@@ -234,11 +234,30 @@
       :remotes remotes
       :branches branches})))
 
+(defn get-group
+  [db name]
+  (filter #(= (:name %) name) (:groups db)))
+
+(defn get-repo
+  [db name]
+  (filter #(= (:name %) name) (:repos db)))
+
 (defn add-repo
   [db db-path url options]
-  (write-yaml
-   (assoc db :repos (conj (:repos db) (repo url options)))
-   db-path))
+  (let [new-repo (repo url options)]
+    (when (empty? (get-group db (:group new-repo)))
+      (throw (ex-info (format "Group is not found")
+                      {:cause (format (str "`repos` failed to find group \"%s\" while adding "
+                                           "a new repo, try to add with `repos add-group %s`")
+                                      (:group new-repo) (:group new-repo))})))
+    (when-not (empty? (get-repo db (:name new-repo)))
+      (throw (ex-info (format "Repo already exists")
+                      {:cause (format (str "Repo with name \"%s\" already exists. "
+                                           "Use `repos -n <new-name>` to set other name")
+                                      (:name new-repo))})))
+    (write-yaml
+     (assoc db :repos (conj (:repos db) new-repo))
+     db-path)))
 
 (defn get-group-path
   [group groups]

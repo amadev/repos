@@ -81,7 +81,7 @@
       (r/main arguments options)
       (catch Error e
         (if (ex-message e)
-          (printf "Error: %s\nCause: %s\nTry verbose for details\n"
+          (printf "Error: %s\nCause: %s\nTry verbose for more details\n"
                   (ex-message e)
                   (:cause (ex-data e)))
           (printf "Error: %s\n" e))

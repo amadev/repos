@@ -52,7 +52,7 @@
     (is (= "\n" (core/serialize nil)))
     (is (= "abc\n" (core/serialize "abc")))
     (is (= "123\n" (core/serialize 123)))
-    (is (= "1.230000\n" (core/serialize 1.23)))
+    (is (= "1.23\n" (core/serialize 1.23)))
     (is (= "a\n" (core/serialize \a)))
     (is (= ":abc\n" (core/serialize :abc)))
     (is (= "abc\n" (core/serialize 'abc))))

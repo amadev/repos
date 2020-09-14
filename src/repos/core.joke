@@ -398,6 +398,11 @@
       (ex "touch" (:db config)))
     config))
 
+(defn dump
+  [repo]
+  (info "dump" (:name repo))
+  (println (joker.json/write-string repo)))
+
 (defn main
   [args options]
   (binding [*context* {:log_level (get (vec (reverse *levels*)) (:verbose options) :debug)
@@ -443,5 +448,6 @@
                    (do-repos (:repos db) subgroups (:name options) (partial pull))
                    (do-repos (:repos db) subgroups (:name options) (partial push)))
           "gerrit" (gerrit (second args) (nth args 2) options)
-          "add-group" (add-group db db-path (second args) (or (:parent options) default-group))))
+          "add-group" (add-group db db-path (second args) (or (:parent options) default-group))
+          "dump" (do-repos (:repos db) subgroups (:name options) (partial dump))))
       )))

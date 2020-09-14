@@ -29,6 +29,7 @@
    ["search" "Seacrh for text in a group of repositories"]
    ["sync" "Pull and then push repositories"]
    ["gerrit" "Generate db file for repos from Gerrit API"]
+   ["dump" "Dump json structure"]
    ])
 (def *opts*
   [["-v" "--verbose" :default 0 :update-fn inc]

@@ -40,7 +40,9 @@
     :required true :parse-fn parse-headers]
    ["-n" "--name" "Repository name" :required true]
    ["-t" "--tags" "Repository tag" :required true :parse-fn parse-tags]
-   [nil "--parent" "Parent group name" :required true]])
+   [nil "--parent" "Parent group name" :required true]
+   [nil "--offset" "Pull repos starting from offset" :required true]
+   ])
 
 (defn usage
   [summary errors]

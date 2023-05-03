@@ -257,7 +257,12 @@
                                       (:name new-repo))})))
     (write-yaml
      (assoc db :repos (conj (:repos db) new-repo))
-     db-path)))
+     db-path)
+    (when (:immediately options)
+      (pull new-repo)
+      )
+    )
+  )
 
 (defn get-group-path
   [group groups]

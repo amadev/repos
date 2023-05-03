@@ -345,10 +345,12 @@
   (let [repos (if (not (empty? subgroups)) (filter #(subgroups (:group %)) repos) repos)
         repos (repos-from-offset repos (:offset options))]
     (doseq [r repos]
-      (if (:name options)
-        (if (= (:name options) (:name r))
-          (func r))
-        (func r))
+      (try
+       (if (:name options)
+         (if (= (:name options) (:name r))
+           (func r))
+         (func r))
+       (catch Error e (throw (ex-info (ex-message e) (assoc (ex-data e) :repo (:name r))))))
       )
     )
   )
